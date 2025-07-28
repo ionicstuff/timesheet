@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Toast from './Toast';
+import TimesheetService, { TimesheetStatus } from '../services/timesheet.service';
 
-// Custom CSS for white placeholder
+// Enhanced CSS for modern UI
 const customStyle = document.createElement('style');
 customStyle.textContent = `
   .white-placeholder::placeholder {
@@ -18,6 +19,54 @@ customStyle.textContent = `
   }
   .white-placeholder:-ms-input-placeholder {
     color: rgba(255, 255, 255, 0.7) !important;
+  }
+  
+  .modern-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .modern-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .pulse-animation {
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(126, 200, 236, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(126, 200, 236, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(126, 200, 236, 0); }
+  }
+  
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .stat-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .stat-card:hover {
+    transform: scale(1.02);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
   }
 `;
 document.head.appendChild(customStyle);
@@ -34,6 +83,11 @@ const Dashboard: React.FC = () => {
     type: 'success' | 'error' | 'warning' | 'info';
     isVisible: boolean;
   }>({ message: '', type: 'info', isVisible: false });
+
+  // Timesheet state
+  const [timesheetStatus, setTimesheetStatus] = useState<TimesheetStatus | null>(null);
+  const [isClockActionLoading, setIsClockActionLoading] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>('');
 
   // Handle click outside dropdown to close it
   useEffect(() => {
@@ -126,9 +180,83 @@ const Dashboard: React.FC = () => {
     warning: '#FFC107',
     info: '#17A2B8'
   };
+  // Fetch timesheet status on component mount
+  useEffect(() => {
+      const fetchStatus = async () => {
+        try {
+          const status = await TimesheetService.getTimesheetStatus();
+          setTimesheetStatus(status);
+        } catch (error) {
+          console.error('Error fetching timesheet status:', error);
+        }
+      };
+
+      fetchStatus();
+  }, []);
+
+  // Update current time every minute
+  useEffect(() => {
+    const getCurrentTime = () => {
+      const now = new Date();
+      return now.toLocaleTimeString('en-US', { 
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const interval = setInterval(() => {
+      setCurrentTime(getCurrentTime());
+    }, 60000);
+
+    setCurrentTime(getCurrentTime()); // Initial set
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleClockAction = async () => {
+    setIsClockActionLoading(true);
+    try {
+      const action = timesheetStatus?.status === 'clocked_in' ? 'out' : 'in';
+      
+      if (timesheetStatus?.status === 'clocked_in') {
+        await TimesheetService.clockOut();
+        setToast({
+          message: 'Successfully clocked out!',
+          type: 'success',
+          isVisible: true
+        });
+      } else {
+        await TimesheetService.clockIn();
+        setToast({
+          message: 'Successfully clocked in!',
+          type: 'success',
+          isVisible: true
+        });
+      }
+
+      // Refresh timesheet status
+      const updatedStatus = await TimesheetService.getTimesheetStatus();
+      setTimesheetStatus(updatedStatus);
+    } catch (error) {
+      console.error('Error performing clock action:', error);
+      setToast({
+        message: `Error performing clock ${timesheetStatus?.status === 'clocked_in' ? 'out' : 'in'}. Please try again.`,
+        type: 'error',
+        isVisible: true
+      });
+    } finally {
+      setIsClockActionLoading(false);
+    }
+  };
 
   return (
-    <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: colorTheme.light }}>
+  <div className="d-flex" style={{ 
+    minHeight: '100vh', 
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    position: 'relative'
+  }}>
+
       {/* Sidebar */}
       <div className="text-white shadow-lg" style={{ 
         width: '240px', 
@@ -344,7 +472,7 @@ const Dashboard: React.FC = () => {
             <div className="col-12">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <h2 className="fw-bold mb-1" style={{ color: colorTheme.primary }}>Welcome back, vaibhav!</h2>
+                  <h2 className="fw-bold mb-1" style={{ color: colorTheme.primary }}>Welcome back, {user?.firstName || 'User'}!</h2>
                   <p className="text-muted mb-0">Here's what's happening with your timesheet today.</p>
                 </div>
                 <div className="text-muted">
@@ -363,60 +491,88 @@ const Dashboard: React.FC = () => {
           {/* Quick Stats */}
           <div className="row mb-4">
             <div className="col-md-3">
-              <div className="card border-0 shadow-sm" style={{ background: `linear-gradient(135deg, ${colorTheme.primary} 0%, ${colorTheme.secondary} 100%)` }}>
+              <div className="card border-0 modern-card stat-card mb-3" style={{ background: `linear-gradient(135deg, ${colorTheme.primary} 0%, ${colorTheme.secondary} 100%)` }}>
                 <div className="card-body text-white">
                   <div className="d-flex align-items-center">
                     <div className="me-3">
-                      <i className="fas fa-clock fa-2x"></i>
+                      <div className="rounded-circle d-flex align-items-center justify-content-center" style={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        backdropFilter: 'blur(10px)'
+                      }}>
+                        <i className="fas fa-clock fa-lg"></i>
+                      </div>
                     </div>
                     <div>
-                      <h3 className="mb-0">8.5</h3>
-                      <small>Hours Today</small>
+                      <h3 className="mb-0 fw-bold">{timesheetStatus?.totalHours || '0.0'}</h3>
+                      <small className="opacity-75">Hours Today</small>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
             <div className="col-md-3">
-              <div className="card border-0 shadow-sm" style={{ background: `linear-gradient(135deg, ${colorTheme.accent} 0%, ${colorTheme.info} 100%)` }}>
+              <div className="card border-0 modern-card stat-card mb-3" style={{ background: `linear-gradient(135deg, ${colorTheme.accent} 0%, ${colorTheme.info} 100%)` }}>
                 <div className="card-body text-white">
                   <div className="d-flex align-items-center">
                     <div className="me-3">
-                      <i className="fas fa-calendar-week fa-2x"></i>
+                      <div className="rounded-circle d-flex align-items-center justify-content-center" style={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        backdropFilter: 'blur(10px)'
+                      }}>
+                        <i className="fas fa-calendar-week fa-lg"></i>
+                      </div>
                     </div>
                     <div>
-                      <h3 className="mb-0">42.5</h3>
-                      <small>Hours This Week</small>
+                      <h3 className="mb-0 fw-bold">42.5</h3>
+                      <small className="opacity-75">Hours This Week</small>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
             <div className="col-md-3">
-              <div className="card border-0 shadow-sm" style={{ background: `linear-gradient(135deg, ${colorTheme.success} 0%, #20C997 100%)` }}>
+              <div className="card border-0 modern-card stat-card mb-3" style={{ background: `linear-gradient(135deg, ${colorTheme.success} 0%, #20C997 100%)` }}>
                 <div className="card-body text-white">
                   <div className="d-flex align-items-center">
                     <div className="me-3">
-                      <i className="fas fa-tasks fa-2x"></i>
+                      <div className="rounded-circle d-flex align-items-center justify-content-center" style={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        backdropFilter: 'blur(10px)'
+                      }}>
+                        <i className="fas fa-tasks fa-lg"></i>
+                      </div>
                     </div>
                     <div>
-                      <h3 className="mb-0">12</h3>
-                      <small>Tasks Completed</small>
+                      <h3 className="mb-0 fw-bold">12</h3>
+                      <small className="opacity-75">Tasks Completed</small>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
             <div className="col-md-3">
-              <div className="card border-0 shadow-sm" style={{ background: `linear-gradient(135deg, ${colorTheme.warning} 0%, #F39C12 100%)` }}>
+              <div className="card border-0 modern-card stat-card mb-3" style={{ background: `linear-gradient(135deg, ${colorTheme.warning} 0%, #F39C12 100%)` }}>
                 <div className="card-body text-white">
                   <div className="d-flex align-items-center">
                     <div className="me-3">
-                      <i className="fas fa-inbox fa-2x"></i>
+                      <div className="rounded-circle d-flex align-items-center justify-content-center" style={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        backdropFilter: 'blur(10px)'
+                      }}>
+                        <i className="fas fa-inbox fa-lg"></i>
+                      </div>
                     </div>
                     <div>
-                      <h3 className="mb-0">6</h3>
-                      <small>Pending Approvals</small>
+                      <h3 className="mb-0 fw-bold">6</h3>
+                      <small className="opacity-75">Pending Approvals</small>
                     </div>
                   </div>
                 </div>
@@ -429,41 +585,90 @@ const Dashboard: React.FC = () => {
             {/* Left Column */}
             <div className="col-md-8">
               {/* Time Tracking */}
-              <div className="card border-0 shadow-sm mb-4">
-                <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+              <div className="card border-0 modern-card mb-4">
+                <div className="card-header border-0 d-flex justify-content-between align-items-center py-3" style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)' }}>
                   <h5 className="mb-0 fw-bold" style={{ color: colorTheme.primary }}>
                     <i className="fas fa-stopwatch me-2" style={{ color: colorTheme.accent }}></i>
                     Time Tracking - Today
                   </h5>
-                  <button className="btn btn-sm" style={{ backgroundColor: colorTheme.accent, color: 'white' }}>
-                    <i className="fas fa-plus me-1"></i>New Entry
-                  </button>
+                  <div className="d-flex align-items-center">
+                    <span className="me-3 text-muted" style={{ fontSize: '14px' }}>
+                      Current Time: {currentTime}
+                    </span>
+                    <button 
+                      className="btn btn-sm d-flex align-items-center" 
+                      style={{ 
+                        backgroundColor: timesheetStatus?.status === 'clocked_in' ? colorTheme.danger : colorTheme.success, 
+                        color: 'white',
+                        minWidth: '100px'
+                      }}
+                      onClick={handleClockAction}
+                      disabled={isClockActionLoading}
+                    >
+                      {isClockActionLoading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <i className={`fas ${timesheetStatus?.status === 'clocked_in' ? 'fa-sign-out-alt' : 'fa-sign-in-alt'} me-2`}></i>
+                          {timesheetStatus?.status === 'clocked_in' ? 'Clock Out' : 'Clock In'}
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div className="card-body">
                   <div className="row text-center">
                     <div className="col-3">
                       <div className="border-end">
-                        <h4 className="text-success mb-1">9:30</h4>
+                        <h4 className={timesheetStatus?.clockInTime ? 'text-success' : 'text-muted'} style={{ fontSize: '1.5rem' }}>
+                          {timesheetStatus?.clockInTime || '--:--'}
+                        </h4>
                         <small className="text-muted">Clock In</small>
                       </div>
                     </div>
                     <div className="col-3">
                       <div className="border-end">
-                        <h4 className="text-danger mb-1">--:--</h4>
+                        <h4 className={timesheetStatus?.clockOutTime ? 'text-danger' : 'text-muted'} style={{ fontSize: '1.5rem' }}>
+                          {timesheetStatus?.clockOutTime || '--:--'}
+                        </h4>
                         <small className="text-muted">Clock Out</small>
                       </div>
                     </div>
                     <div className="col-3">
                       <div className="border-end">
-                        <h4 style={{ color: colorTheme.primary }} className="mb-1">8:30</h4>
+                        <h4 style={{ color: timesheetStatus?.totalHours ? colorTheme.primary : '#6c757d', fontSize: '1.5rem' }}>
+                          {timesheetStatus?.totalHours || '0:00'}
+                        </h4>
                         <small className="text-muted">Total Hours</small>
                       </div>
                     </div>
                     <div className="col-3">
-                      <h4 className="text-warning mb-1">8:00</h4>
+                      <h4 className="text-warning" style={{ fontSize: '1.5rem' }}>8:00</h4>
                       <small className="text-muted">Required</small>
                     </div>
                   </div>
+                  
+                  {/* Status Message */}
+                  {timesheetStatus && (
+                    <div className="mt-3 text-center">
+                      <div className="alert mb-0" style={{ 
+                        backgroundColor: timesheetStatus.status === 'clocked_in' ? '#d4edda' : '#f8d7da',
+                        borderColor: timesheetStatus.status === 'clocked_in' ? '#c3e6cb' : '#f5c6cb',
+                        color: timesheetStatus.status === 'clocked_in' ? '#155724' : '#721c24'
+                      }}>
+                        <i className={`fas ${timesheetStatus.status === 'clocked_in' ? 'fa-clock' : 'fa-pause-circle'} me-2`}></i>
+                        {timesheetStatus.status === 'clocked_in' 
+                          ? `You are currently clocked in since ${timesheetStatus.clockInTime}` 
+                          : timesheetStatus.clockOutTime 
+                            ? `You clocked out at ${timesheetStatus.clockOutTime}` 
+                            : 'You are not clocked in yet today'
+                        }
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               
