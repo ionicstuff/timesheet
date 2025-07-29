@@ -53,6 +53,7 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/timesheet', require('./routes/timesheet'));
+app.use('/api/admin', require('./admin/routes/admin'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

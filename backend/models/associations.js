@@ -1,12 +1,14 @@
-const User = require('./User');
-const Timesheet = require('./Timesheet');
-const RoleMaster = require('./RoleMaster');
-const ModuleMaster = require('./ModuleMaster');
-const PermissionMaster = require('./PermissionMaster');
-const RolePermission = require('./RolePermission');
-const UserHierarchy = require('./UserHierarchy');
-const Client = require('./Client');
-const Project = require('./Project');
+const {
+  User,
+  Timesheet,
+  RoleMaster,
+  ModuleMaster,
+  PermissionMaster,
+  RolePermission,
+  UserHierarchy,
+  Client,
+  Project
+} = require('./index');
 
 // User and RoleMaster associations
 User.belongsTo(RoleMaster, {
@@ -129,7 +131,7 @@ User.hasMany(Project, {
   as: 'managedProjects'
 });
 
-// Existing User and Timesheet associations
+// Existing User and Timesheet associations (keeping these)
 User.hasMany(Timesheet, {
   foreignKey: 'userId',
   as: 'timesheets'
@@ -141,13 +143,8 @@ Timesheet.belongsTo(User, {
 });
 
 module.exports = {
-  User,
-  Timesheet,
-  RoleMaster,
-  ModuleMaster,
-  PermissionMaster,
-  RolePermission,
-  UserHierarchy,
-  Client,
-  Project
+  // Export function to set up all associations
+  setupAssociations: () => {
+    console.log('Database associations have been set up successfully');
+  }
 };

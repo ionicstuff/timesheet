@@ -157,7 +157,7 @@ const Login: React.FC = () => {
                 type="submit"
                 className="btn w-100 mb-3"
                 style={{ 
-                  backgroundColor: '#273C63', 
+                  backgroundColor: '#dc3545', 
                   border: 'none',
                   color: 'white',
                   padding: '0.75rem',
