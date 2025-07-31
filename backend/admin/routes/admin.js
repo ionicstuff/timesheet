@@ -18,6 +18,7 @@ router.delete('/roles/:id', adminController.deleteRole);
 
 // User management routes
 router.get('/users', adminController.getUsers);
+router.get('/users/:id', adminController.getUser);
 router.post('/users', adminController.createUser);
 router.put('/users/:id', adminController.updateUser);
 router.delete('/users/:id', adminController.deleteUser);
@@ -37,6 +38,10 @@ router.get('/projects', adminController.getProjects);
 router.post('/projects', adminController.createProject);
 router.put('/projects/:id', adminController.updateProject);
 router.delete('/projects/:id', adminController.deleteProject);
+
+// Department and designation routes
+router.get('/departments', adminController.getDepartments);
+router.get('/designations', adminController.getDesignations);
 
 module.exports = router;
 

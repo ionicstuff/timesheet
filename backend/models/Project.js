@@ -137,6 +137,29 @@ const Project = sequelize.define('Project', {
     defaultValue: true,
     field: 'is_active'
   },
+  spocId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'spoc_id',
+    references: {
+      model: 'spocs',
+      key: 'id'
+    }
+  },
+  briefReceivedOn: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    field: 'brief_received_on'
+  },
+  estimatedTime: {
+    type: DataTypes.DECIMAL(8, 2),
+    allowNull: true,
+    field: 'estimated_time',
+    validate: {
+      min: 0
+    },
+    comment: 'Estimated time in hours'
+  },
   createdBy: {
     type: DataTypes.INTEGER,
     allowNull: true,

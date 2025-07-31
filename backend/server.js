@@ -15,8 +15,12 @@ app.use(helmet());
 // Rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX) || 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  max: parseInt(process.env.RATE_LIMIT_MAX) || 1000, // limit each IP to 1000 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  skip: (req) => {
+    // Skip rate limiting for admin routes
+    return req.path.startsWith('/api/admin');
+  }
 });
 app.use('/api', limiter);
 
@@ -53,6 +57,11 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/timesheet', require('./routes/timesheet'));
+app.use('/api/clients', require('./routes/clients'));
+app.use('/api/projects', require('./routes/projectRoutes'));
+app.use('/api/client-management', require('./routes/clientRoutes'));
+app.use('/api/spocs', require('./routes/spocRoutes'));
+app.use('/api/tasks', require('./routes/taskRoutes'));
 app.use('/api/admin', require('./admin/routes/admin'));
 
 // Error handling middleware

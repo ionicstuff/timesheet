@@ -7,6 +7,8 @@ const RolePermission = require('./RolePermission');
 const UserHierarchy = require('./UserHierarchy');
 const Client = require('./Client');
 const Project = require('./Project');
+const Spoc = require('./Spoc');
+const Task = require('./Task');
 
 // User and RoleMaster associations
 User.belongsTo(RoleMaster, {
@@ -129,6 +131,64 @@ User.hasMany(Project, {
   as: 'managedProjects'
 });
 
+// Project SPOC association
+Project.belongsTo(Spoc, {
+  foreignKey: 'spocId',
+  as: 'spoc'
+});
+
+// SPOC associations
+Spoc.belongsTo(Client, {
+  foreignKey: 'clientId',
+  as: 'client'
+});
+
+Spoc.belongsTo(Project, {
+  foreignKey: 'projectId',
+  as: 'project'
+});
+
+Spoc.belongsTo(User, {
+  foreignKey: 'createdBy',
+  as: 'creator'
+});
+
+Client.hasMany(Spoc, {
+  foreignKey: 'clientId',
+  as: 'spocs'
+});
+
+Project.hasMany(Spoc, {
+  foreignKey: 'projectId',
+  as: 'spocs'
+});
+
+User.hasMany(Spoc, {
+  foreignKey: 'createdBy',
+  as: 'createdSpocs'
+});
+
+// Task associations
+Task.belongsTo(Project, {
+  foreignKey: 'projectId',
+  as: 'project'
+});
+
+Task.belongsTo(User, {
+  foreignKey: 'assignedTo',
+  as: 'assignee'
+});
+
+Project.hasMany(Task, {
+  foreignKey: 'projectId',
+  as: 'tasks'
+});
+
+User.hasMany(Task, {
+  foreignKey: 'assignedTo',
+  as: 'assignedTasks'
+});
+
 // Existing User and Timesheet associations
 User.hasMany(Timesheet, {
   foreignKey: 'userId',
@@ -149,5 +209,7 @@ module.exports = {
   RolePermission,
   UserHierarchy,
   Client,
-  Project
+  Project,
+  Spoc,
+  Task
 };

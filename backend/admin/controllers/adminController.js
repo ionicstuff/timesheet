@@ -225,11 +225,11 @@ const createUser = async (req, res) => {
 
     // Create user
     const [result] = await sequelize.query(`
-      INSERT INTO users (employee_id, email, password_hash, first_name, last_name, phone, department, designation, role_id, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      INSERT INTO users (employee_id, email, password_hash, first_name, last_name, phone, department, designation, role_id, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
       RETURNING *
     `, {
-      bind: [employeeId, email, hashedPassword, firstName, lastName, phone, department, designation, roleId]
+      bind: [employeeId, email, hashedPassword, firstName, lastName, phone, department, designation, parseInt(roleId), true]
     });
 
     res.status(201).json({ message: 'User created successfully', user: result[0] });
@@ -277,6 +277,65 @@ const deleteUser = async (req, res) => {
   } catch (error) {
     console.error('Error deleting user:', error);
     res.status(500).json({ message: 'Error deleting user', error: error.message });
+  }
+};
+
+const getUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [users] = await sequelize.query(`
+      SELECT 
+        u.id,
+        u.employee_id,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.phone,
+        u.role as legacy_role,
+        u.department,
+        u.designation,
+        u.date_of_joining,
+        u.is_active,
+        u.created_at,
+        u.updated_at,
+        u.role_id,
+        rm.role_name as role_name,
+        rm.level as role_level
+      FROM users u
+      LEFT JOIN role_masters rm ON u.role_id = rm.id
+      WHERE u.id = $1
+    `, {
+      bind: [id]
+    });
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const user = users[0];
+    const transformedUser = {
+      id: user.id,
+      username: user.employee_id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phone: user.phone,
+      department: user.department,
+      designation: user.designation,
+      dateOfJoining: user.date_of_joining,
+      isActive: user.is_active,
+      role: {
+        id: user.role_id,
+        name: user.role_name || user.legacy_role,
+        level: user.role_level || 1
+      },
+      createdAt: user.created_at
+    };
+
+    res.json(transformedUser);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Error fetching user', error: error.message });
   }
 };
 
@@ -523,6 +582,111 @@ const getModules = async (req, res) => {
   }
 };
 
+// ====================
+// DEPARTMENTS AND DESIGNATIONS
+// ====================
+const getDepartments = async (req, res) => {
+  try {
+    // Get unique departments from users table
+    const [departments] = await sequelize.query(`
+      SELECT DISTINCT department as name 
+      FROM users 
+      WHERE department IS NOT NULL AND department != '' 
+      ORDER BY department ASC
+    `);
+    
+    // Add some common departments if none exist
+    const commonDepartments = [
+      'Engineering',
+      'Sales',
+      'Marketing',
+      'Human Resources',
+      'Finance',
+      'Operations',
+      'Customer Support',
+      'Product Management',
+      'Quality Assurance',
+      'IT Support'
+    ];
+    
+    const existingDepts = departments.map(d => d.name);
+    const allDepartments = [...existingDepts];
+    
+    // Add common departments that don't already exist
+    commonDepartments.forEach(dept => {
+      if (!existingDepts.includes(dept)) {
+        allDepartments.push(dept);
+      }
+    });
+    
+    res.json(allDepartments.sort().map(name => ({ name })));
+  } catch (error) {
+    console.error('Error fetching departments:', error);
+    res.status(500).json({ message: 'Error fetching departments', error: error.message });
+  }
+};
+
+const getDesignations = async (req, res) => {
+  try {
+    // Get unique designations from users table
+    const [designations] = await sequelize.query(`
+      SELECT DISTINCT designation as name 
+      FROM users 
+      WHERE designation IS NOT NULL AND designation != '' 
+      ORDER BY designation ASC
+    `);
+    
+    // Add some common designations if none exist
+    const commonDesignations = [
+      'Software Engineer',
+      'Senior Software Engineer',
+      'Lead Software Engineer',
+      'Principal Software Engineer',
+      'Frontend Developer',
+      'Backend Developer',
+      'Full Stack Developer',
+      'DevOps Engineer',
+      'QA Engineer',
+      'Product Manager',
+      'Project Manager',
+      'Business Analyst',
+      'UI/UX Designer',
+      'Data Analyst',
+      'Sales Executive',
+      'Marketing Specialist',
+      'HR Specialist',
+      'Finance Analyst',
+      'Operations Manager',
+      'Team Lead',
+      'Technical Lead',
+      'Architect',
+      'Consultant',
+      'Intern',
+      'Associate',
+      'Senior Associate',
+      'Manager',
+      'Senior Manager',
+      'Director',
+      'Vice President'
+    ];
+    
+    const existingDesignations = designations.map(d => d.name);
+    const allDesignations = [...existingDesignations];
+    
+    // Add common designations that don't already exist
+    commonDesignations.forEach(designation => {
+      if (!existingDesignations.includes(designation)) {
+        allDesignations.push(designation);
+      }
+    });
+    
+    res.json(allDesignations.sort().map(name => ({ name })));
+  } catch (error) {
+    console.error('Error fetching designations:', error);
+    res.status(500).json({ message: 'Error fetching designations', error: error.message });
+  }
+};
+
 module.exports = {
   // Dashboard
   getDashboardStats,
@@ -535,6 +699,7 @@ module.exports = {
   
   // User management
   getUsers,
+  getUser,
   createUser,
   updateUser,
   deleteUser,
@@ -553,5 +718,9 @@ module.exports = {
   getProjects,
   createProject,
   updateProject,
-  deleteProject
+  deleteProject,
+  
+  // Departments and designations
+  getDepartments,
+  getDesignations
 };
