@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Toast from './Toast';
 import TimesheetService, { TimesheetStatus } from '../services/timesheet.service';
+import Clients from './Clients';
+import OnboardClient from './OnboardClient';
+import ProjectsContent from './ProjectsContent';
 
 // Enhanced CSS for modern UI
 const customStyle = document.createElement('style');
@@ -83,6 +86,9 @@ const Dashboard: React.FC = () => {
     type: 'success' | 'error' | 'warning' | 'info';
     isVisible: boolean;
   }>({ message: '', type: 'info', isVisible: false });
+
+  // View state management
+const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboardClient' | 'projects'>('dashboard');
 
   // Timesheet state
   const [timesheetStatus, setTimesheetStatus] = useState<TimesheetStatus | null>(null);
@@ -309,19 +315,54 @@ const Dashboard: React.FC = () => {
           <ul className="nav nav-pills flex-column">
             <li className="nav-item mb-1">
               <a className="nav-link text-white d-flex align-items-center py-3 px-3 rounded" 
-                 style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} href="#">
+                 style={{ 
+                   backgroundColor: currentView === 'dashboard' ? 'rgba(255,255,255,0.2)' : 'transparent',
+                   transition: 'all 0.3s ease',
+                   cursor: 'pointer'
+                 }}
+                 onMouseEnter={(e) => currentView !== 'dashboard' && (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+                 onMouseLeave={(e) => currentView !== 'dashboard' && (e.currentTarget.style.backgroundColor = 'transparent')}
+                 onClick={() => setCurrentView('dashboard')}>
                 <i className="fas fa-home me-3" style={{ width: '20px' }}></i>
                 <span>Dashboard</span>
               </a>
             </li>
             <li className="nav-item mb-1">
-              <a className="nav-link text-white d-flex align-items-center py-3 px-3 rounded" 
+              <a className="nav-link text-white d-flex align-items-center py-3 px-3 rounded"
                  style={{ transition: 'all 0.3s ease' }}
                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                  href="#">
                 <i className="fas fa-user me-3" style={{ width: '20px' }}></i>
                 <span>My Profile</span>
+              </a>
+            </li>
+            <li className="nav-item mb-1">
+              <a className="nav-link text-white d-flex align-items-center py-3 px-3 rounded"
+                 style={{ 
+                   backgroundColor: currentView === 'clients' ? 'rgba(255,255,255,0.2)' : 'transparent',
+                   transition: 'all 0.3s ease',
+                   cursor: 'pointer'
+                 }}
+                 onMouseEnter={(e) => currentView !== 'clients' && (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+                 onMouseLeave={(e) => currentView !== 'clients' && (e.currentTarget.style.backgroundColor = 'transparent')}
+                 onClick={() => setCurrentView('clients')}>
+                <i className="fas fa-building me-3" style={{ width: '20px' }}></i>
+                <span>Clients</span>
+              </a>
+            </li>
+            <li className="nav-item mb-1">
+              <a className="nav-link text-white d-flex align-items-center py-3 px-3 rounded"
+                 style={{ 
+                   backgroundColor: currentView === 'projects' ? 'rgba(255,255,255,0.2)' : 'transparent',
+                   transition: 'all 0.3s ease',
+                   cursor: 'pointer'
+                 }}
+                 onMouseEnter={(e) => currentView !== 'projects' && (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+                 onMouseLeave={(e) => currentView !== 'projects' && (e.currentTarget.style.backgroundColor = 'transparent')}
+                 onClick={() => setCurrentView('projects')}>
+                <i className="fas fa-project-diagram me-3" style={{ width: '20px' }}></i>
+                <span>Projects</span>
               </a>
             </li>
             <li className="nav-item mb-1">
@@ -398,7 +439,12 @@ const Dashboard: React.FC = () => {
         }}>
           <div className="container-fluid px-4">
             <div className="d-flex align-items-center">
-              <h4 className="mb-0 fw-bold" style={{ color: colorTheme.primary }}>Dashboard</h4>
+              <h4 className="mb-0 fw-bold" style={{ color: colorTheme.primary }}>{
+                currentView === 'dashboard' ? 'Dashboard' : 
+                currentView === 'clients' ? 'Client Management' :
+                currentView === 'onboardClient' ? 'Client Onboarding' :
+                currentView === 'projects' ? 'Project Management' : 'Dashboard'
+              }</h4>
             </div>
             <div className="navbar-nav ms-auto d-flex align-items-center">
               <div className="nav-item me-3">
@@ -420,7 +466,7 @@ const Dashboard: React.FC = () => {
                       {user ? `${user.firstName} ${user.lastName}` : 'User'}
                     </div>
                     <div className="text-muted" style={{ fontSize: '12px' }}>
-                      {user?.role || 'Employee'}
+                      {user?.role || 'Employeeaaaa'}
                     </div>
                   </div>
                   <span className="badge rounded-circle d-flex align-items-center justify-content-center" style={{ 
@@ -465,28 +511,29 @@ const Dashboard: React.FC = () => {
           </div>
         </nav>
         
-        {/* Dashboard Content */}
-        <div className="container-fluid px-4 py-4">
-          {/* Welcome Section */}
-          <div className="row mb-4">
-            <div className="col-12">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h2 className="fw-bold mb-1" style={{ color: colorTheme.primary }}>Welcome back, {user?.firstName || 'User'}!</h2>
-                  <p className="text-muted mb-0">Here's what's happening with your timesheet today.</p>
-                </div>
-                <div className="text-muted">
-                  <i className="fas fa-calendar me-2"></i>
-                  {new Date().toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
+        {/* Dynamic Content Based on Current View */}
+        {currentView === 'dashboard' ? (
+          <div className="container-fluid px-4 py-4">
+            {/* Welcome Section */}
+            <div className="row mb-4">
+              <div className="col-12">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h2 className="fw-bold mb-1" style={{ color: colorTheme.primary }}>Welcome back, {user?.firstName || 'User'}!</h2>
+                    <p className="text-muted mb-0">Here's what's happening with your timesheet today.</p>
+                  </div>
+                  <div className="text-muted">
+                    <i className="fas fa-calendar me-2"></i>
+                    {new Date().toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
           {/* Quick Stats */}
           <div className="row mb-4">
@@ -815,6 +862,15 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+        ) : currentView === 'clients' ? (
+          // Clients View
+          <Clients onNavigateToOnboard={() => setCurrentView('onboardClient')} />
+        ) : currentView === 'onboardClient' ? (
+          // Onboard Client View
+          <OnboardClient onNavigateToClients={() => setCurrentView('clients')} />
+        ) : (
+          <ProjectsContent />
+        )}
       </div>
       
       {/* Logout Confirmation Modal */}

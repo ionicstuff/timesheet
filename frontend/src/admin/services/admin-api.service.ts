@@ -58,6 +58,11 @@ export const getUsers = async () => {
   return response.data;
 };
 
+export const getUser = async (id: string) => {
+  const response = await adminApi.get(`/users/${id}`);
+  return response.data;
+};
+
 export const createUser = async (userData: any) => {
   const response = await adminApi.post('/users', userData);
   return response.data;
@@ -123,5 +128,16 @@ export const updateProject = async (id: string, projectData: any) => {
 
 export const deleteProject = async (id: string) => {
   const response = await adminApi.delete(`/projects/${id}`);
+  return response.data;
+};
+
+// Departments and Designations
+export const getDepartments = async () => {
+  const response = await adminApi.get('/departments');
+  return response.data;
+};
+
+export const getDesignations = async () => {
+  const response = await adminApi.get('/designations');
   return response.data;
 };
