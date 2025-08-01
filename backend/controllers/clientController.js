@@ -277,7 +277,8 @@ const clientController = {
         billingType,
         hourlyRate,
         currency,
-        notes
+        notes,
+        spocEmail // Added SPOC email field
       } = req.body;
 
       // Validate required fields
@@ -333,6 +334,26 @@ const clientController = {
         createdBy: userId
       });
 
+      // Create SPOC if email is provided
+      if (spocEmail) {
+        try {
+          // Extract name from email if no name provided
+          const spocName = spocEmail.split('@')[0]; // Use email prefix as default name
+          
+          await Spoc.create({
+            clientId: newClient.id,
+            name: spocName,
+            email: spocEmail,
+            isPrimary: true, // Assuming primary SPOC
+            isActive: true,
+            createdBy: userId
+          });
+        } catch (error) {
+          console.error('Error creating SPOC:', error);
+          // Don't fail the entire client creation if SPOC creation fails
+        }
+      }
+
       // Fetch the created client with associations
       const clientWithDetails = await Client.findByPk(newClient.id, {
         include: [
@@ -345,6 +366,13 @@ const clientController = {
             model: User,
             as: 'creator',
             attributes: ['id', 'firstName', 'lastName', 'email']
+          },
+          {
+            model: Spoc,
+            as: 'spocs',
+            attributes: ['id', 'name', 'email'],
+            where: { isActive: true },
+            required: false
           }
         ]
       });
@@ -352,7 +380,7 @@ const clientController = {
       res.status(201).json({
         success: true,
         data: clientWithDetails,
-        message: 'Client created successfully'
+        message: 'Client created and SPOC added successfully'
       });
     } catch (error) {
       console.error('Error creating client:', error);
