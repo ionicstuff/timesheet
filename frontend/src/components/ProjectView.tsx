@@ -4,27 +4,39 @@ import { useAuth } from '../context/AuthContext';
 import ProjectService, { Project } from '../services/project.service';
 import AddTaskModal from './AddTaskModal';
 
-// Enhanced CSS for modern UI
+// Dark theme styles for Project View
 const customStyle = document.createElement('style');
 customStyle.textContent = `
   .modern-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3) !important;
     transition: all 0.3s ease;
   }
-  
+
   .modern-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 12px 16px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  .modern-card .card-header {
+    background-color: var(--secondary-bg) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
   }
   
+  .modern-card .card-body {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+  }
+
   .gradient-text {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--text-primary) !important;
+    font-weight: 600;
+  }
+  
+  .project-details strong {
+    color: var(--text-primary) !important;
   }
 `;
 document.head.appendChild(customStyle);
@@ -70,7 +82,7 @@ const ProjectView: React.FC = () => {
   return (
     <div className="d-flex" style={{ 
       minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      backgroundColor: 'var(--primary-bg)',
       position: 'relative'
     }}>
 
@@ -78,7 +90,7 @@ const ProjectView: React.FC = () => {
       <div className="text-white shadow-lg" style={{ 
         width: '240px', 
         minHeight: '100vh', 
-        background: `linear-gradient(135deg, #273C63 0%, #666983 100%)` 
+        backgroundColor: 'var(--sidebar-bg)' 
       }}>
         <div className="p-2">
           {/* Logo and Company */}
@@ -86,7 +98,7 @@ const ProjectView: React.FC = () => {
             <div className="me-3" style={{ 
               width: '45px', 
               height: '45px', 
-              backgroundColor: '#7EC8EC', 
+              backgroundColor: 'var(--accent-blue)', 
               borderRadius: '12px', 
               display: 'flex', 
               alignItems: 'center', 
@@ -133,12 +145,13 @@ const ProjectView: React.FC = () => {
       <div className="flex-grow-1">
         {/* Header */}
         <nav className="navbar navbar-expand-lg shadow-sm" style={{ 
-          backgroundColor: '#FFFFFF', 
-          borderBottom: '1px solid #EAF1ED' 
+          backgroundColor: 'var(--card-bg)', 
+          borderBottom: '1px solid var(--border-color)',
+          color: 'var(--text-primary)'
         }}>
           <div className="container-fluid px-4">
             <div className="d-flex align-items-center">
-              <h4 className="mb-0 fw-bold" style={{ color: '#273C63' }}>
+              <h4 className="mb-0 fw-bold" style={{ color: 'var(--text-primary)' }}>
                 Project Details (View)
               </h4>
             </div>
@@ -151,17 +164,17 @@ const ProjectView: React.FC = () => {
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="me-2 text-end">
-                    <div className="fw-bold" style={{ color: '#273C63', fontSize: '14px' }}>
+                    <div className="fw-bold" style={{ color: 'var(--text-primary)', fontSize: '14px' }}>
                       {user ? `${user.firstName} ${user.lastName}` : 'User'}
                     </div>
-                    <div className="text-muted" style={{ fontSize: '12px' }}>
+                    <div className="text-muted" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                       {user?.role || 'Employee'}
                     </div>
                   </div>
                   <span className="badge rounded-circle d-flex align-items-center justify-content-center" style={{ 
                     width: '40px', 
                     height: '40px', 
-                    backgroundColor: '#7EC8EC',
+                    backgroundColor: 'var(--accent-blue)',
                     color: 'white',
                     fontWeight: 'bold'
                   }}>
@@ -173,25 +186,26 @@ const ProjectView: React.FC = () => {
           </div>
         </nav>
         
-        <div className="container-fluid px-4 py-4">
+        <div className="container-fluid px-4 py-4" style={{ backgroundColor: 'var(--primary-bg)', color: 'var(--text-primary)' }}>
       {project ? (
         <div className="card shadow-sm mb-4 modern-card">
-          <div className="card-header bg-white d-flex justify-content-between align-items-center">
+          <div className="card-header d-flex justify-content-between align-items-center">
             <h5 className="mb-0 fw-bold gradient-text">{project.name}</h5>
             <span className={project.isActive ? 'badge bg-success' : 'badge bg-danger'}>{project.isActive ? 'Active' : 'Inactive'}</span>
           </div>
           <div className="card-body">
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="card-title mb-0">Project Overview</h5>
+              <h5 className="card-title mb-0" style={{ color: 'var(--text-primary)' }}>Project Overview</h5>
               <button 
                 className="btn btn-primary" 
                 onClick={() => setShowAddTaskModal(true)}
+                style={{ backgroundColor: 'var(--accent-blue)', borderColor: 'var(--accent-blue)' }}
               >
                 <i className="fas fa-plus me-2"></i>
                 Add Task
               </button>
             </div>
-            <div className="mb-3">
+            <div className="mb-3 project-details">
               <strong>Client:</strong> {project.client.name}<br />
               <strong>Manager:</strong> {project.manager?.firstName && project.manager?.lastName ? `${project.manager.firstName} ${project.manager.lastName}` : 'Not assigned'}<br />
               <strong>Description:</strong> {project.description || 'No description available.'}<br />

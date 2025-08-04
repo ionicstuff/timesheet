@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './Projects.css'; // Assuming you have a CSS file for styling
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ProjectService, { Project, CreateProjectData } from '../services/project.service';
@@ -7,44 +8,140 @@ import ClientService from '../services/client.service'; // Assuming a client ser
 import AdminService from '../services/admin.service'; // Assuming an admin service for users
 import axios from 'axios';
 
-// Enhanced CSS for modern UI
-const customStyle = document.createElement('style');
-customStyle.textContent = `
-  .white-placeholder::placeholder {
-    color: rgba(255, 255, 255, 0.7) !important;
-    opacity: 1;
-  }
-  .white-placeholder::-webkit-input-placeholder {
-    color: rgba(255, 255, 255, 0.7) !important;
-  }
-  .white-placeholder::-moz-placeholder {
-    color: rgba(255, 255, 255, 0.7) !important;
-  }
-  .white-placeholder:-ms-input-placeholder {
-    color: rgba(255, 255, 255, 0.7) !important;
+// Dynamic CSS injection for dark theme (similar to OnboardClient.tsx)
+const projectsFormStyle = document.createElement('style');
+projectsFormStyle.textContent = `
+  .projects-container {
+    background-color: var(--primary-bg) !important;
+    min-height: 100vh;
+    color: var(--text-primary) !important;
+    padding: 20px;
   }
   
-  .modern-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+  .projects-card {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
   
-  .modern-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  .projects-table {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
   }
   
-  .gradient-text {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .projects-table th {
+    background-color: var(--secondary-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 12px;
+  }
+  
+  .projects-table td {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    padding: 12px;
+  }
+  
+  .projects-table tbody tr {
+    background-color: var(--card-bg) !important;
+  }
+  
+  .projects-table tbody tr:hover {
+    background-color: var(--secondary-bg) !important;
+  }
+  
+  .projects-table tbody tr:hover td {
+    background-color: var(--secondary-bg) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  .projects-form-control {
+    background-color: var(--secondary-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+    border-radius: 8px;
+  }
+  
+  .projects-form-control:focus {
+    background-color: var(--secondary-bg) !important;
+    border-color: var(--accent-blue) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(79, 123, 255, 0.25) !important;
+  }
+  
+  .projects-form-control::placeholder {
+    color: var(--text-secondary) !important;
+  }
+  
+  .projects-form-label {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  
+  .projects-btn-primary {
+    background-color: var(--accent-blue) !important;
+    border-color: var(--accent-blue) !important;
+    color: white !important;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-weight: 600;
+  }
+  
+  .projects-nav-tabs {
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+  
+  .projects-nav-tabs .nav-link {
+    color: var(--text-secondary) !important;
+    border: none;
+    background: transparent;
+  }
+  
+  .projects-nav-tabs .nav-link.active {
+    color: var(--text-primary) !important;
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-bottom-color: var(--card-bg) !important;
+  }
+  
+  /* Override Bootstrap table styles completely */
+  .projects-container .table {
+    --bs-table-bg: var(--card-bg) !important;
+    --bs-table-color: var(--text-primary) !important;
+    --bs-table-border-color: var(--border-color) !important;
+    --bs-table-hover-bg: var(--secondary-bg) !important;
+    --bs-table-hover-color: var(--text-primary) !important;
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  .projects-container .table > :not(caption) > * > * {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  .projects-container .table-responsive {
+    background-color: var(--card-bg) !important;
+  }
+  
+  .projects-container .card {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  .projects-container .card-body {
+    background-color: var(--card-bg) !important;
   }
 `;
-document.head.appendChild(customStyle);
+document.head.appendChild(projectsFormStyle);
+
+
 
 interface Spoc {
   id: number;
@@ -186,186 +283,249 @@ const Projects: React.FC = () => {
 
   return (
     <ProjectsLayout>
-      <h2 className="fw-bold mb-4">Project Management</h2>
+      <div className="projects-container">
+        <h2 className="fw-bold mb-4" style={{ color: 'var(--text-primary)', marginBottom: '16px' }}>Project Management</h2>
 
-      <ul className="nav nav-tabs mb-4">
-        <li className="nav-item">
-          <a className={`nav-link ${activeTab === 'existing' ? 'active' : ''}`} href="#" onClick={() => setActiveTab('existing')}>Existing Projects</a>
-        </li>
-        <li className="nav-item">
-          <a className={`nav-link ${activeTab === 'create' ? 'active' : ''}`} href="#" onClick={() => setActiveTab('create')}>Create New Project</a>
-        </li>
-      </ul>
-
-      {error && <div className="alert alert-danger">{error}</div>}
-
-      {activeTab === 'create' && (
-        <div className="card border-0 shadow-sm modern-card">
-          <div className="card-body">
-            <h5 className="card-title fw-bold" style={{ color: '#273C63' }}>
-              <i className="fas fa-plus-circle me-2" style={{ color: '#7EC8EC' }}></i>
+        <ul className="nav nav-tabs projects-nav-tabs mb-4">
+          <li className="nav-item">
+            <a 
+              className={`nav-link ${activeTab === 'existing' ? 'active' : ''}`} 
+              href="#" 
+              onClick={() => setActiveTab('existing')}
+            >
+              Existing Projects
+            </a>
+          </li>
+          <li className="nav-item">
+            <a 
+              className={`nav-link ${activeTab === 'create' ? 'active' : ''}`} 
+              href="#" 
+              onClick={() => setActiveTab('create')}
+            >
               Create New Project
-            </h5>
-            <form onSubmit={handleCreateProject}>
-              <div className="mb-3">
-                <label className="form-label">Project Name</label>
-                <input type="text" className="form-control" value={newProject.name} onChange={(e) => setNewProject({ ...newProject, name: e.target.value })} required />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Client</label>
-                <select className="form-select" value={newProject.clientId} onChange={(e) => handleClientChange(+e.target.value)} required>
-                  <option value={0} disabled>Select Client</option>
-                  {clients && clients.map(c => <option key={c.id} value={c.id}>{c.clientName}</option>)}
-                </select>
-                <small className="text-muted">Clients loaded: {clients ? clients.length : 0}</small>
-              </div>
-              
-              <div className="mb-3">
-                <label className="form-label">Client SPOC</label>
-                <select className="form-select" value={newProject.spocId} onChange={(e) => setNewProject({ ...newProject, spocId: +e.target.value })} required disabled={!spocs || !spocs.length}>
-                  <option value={0} disabled>Select Client SPOC</option>
-                  {spocs && spocs.map(spoc => <option key={spoc.id} value={spoc.id}>{spoc.name} ({spoc.email})</option>)}
-                </select>
-                {(!spocs || !spocs.length) && <small className="text-muted">Select a client first to see SPOCs</small>}
-              </div>
-              
-              <div className="mb-3">
-                <label className="form-label">Overall Project Delivery Date & Time</label>
-                <input 
-                  type="date" 
-                  className="form-control" 
-                  value={newProject.endDate} 
-                  onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })} 
-                />
-              </div>
-              
-              <div className="mb-3">
-                <label className="form-label">Brief Received On</label>
-                <input 
-                  type="date" 
-                  className="form-control" 
-                  value={newProject.briefReceivedOn} 
-                  onChange={(e) => setNewProject({ ...newProject, briefReceivedOn: e.target.value })} 
-                />
-              </div>
-              
-              <div className="mb-3">
-                <label className="form-label">Project Estimated Time (hours)</label>
-                <input 
-                  type="number" 
-                  className="form-control" 
-                  placeholder="Enter estimated time in hours"
-                  value={newProject.estimatedTime} 
-                  onChange={(e) => setNewProject({ ...newProject, estimatedTime: e.target.value })} 
-                />
-              </div>
-              
-              <button 
-                type="submit" 
-                className="btn btn-primary" 
-                disabled={isLoading}
-                style={{ 
-                  backgroundColor: '#007bff',
-                  borderColor: '#007bff',
-                  borderRadius: '8px',
-                  padding: '10px 24px',
-                  fontWeight: '600'
-                }}
-              >
-                {isLoading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-plus me-2"></i>
-                    Create Project
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+            </a>
+          </li>
+        </ul>
 
-      {activeTab === 'existing' && (
-        <div className="card border-0 shadow-sm modern-card">
-          <div className="card-body">
-            <h5 className="card-title fw-bold mb-4" style={{ color: '#273C63' }}>
-              <i className="fas fa-list me-2" style={{ color: '#7EC8EC' }}></i>
-              All Projects
-            </h5>
-            {isLoading ? (
-              <p>Loading projects...</p>
-            ) : (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th style={{ color: '#273C63', fontWeight: '600' }}>Name</th>
-                      <th style={{ color: '#273C63', fontWeight: '600' }}>Client</th>
-                      <th style={{ color: '#273C63', fontWeight: '600' }}>Status</th>
-                      <th style={{ color: '#273C63', fontWeight: '600' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {projects.map(p => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                        <td>
-                          <div className="fw-semibold" style={{ color: '#273C63' }}>{p.name}</div>
-                        </td>
-                        <td>
-                          <span className="text-muted">{p.client.name}</span>
-                        </td>
-                        <td>
-                          <span className={`badge ${p.isActive ? 'bg-success' : 'bg-secondary'} rounded-pill`}>
-                            {p.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td>
-                          <button 
-                            className="btn btn-sm btn-primary me-2" 
-                            onClick={() => handleViewProjectDetails(p.id)}
-                            style={{ 
-                              backgroundColor: '#007bff',
-                              borderColor: '#007bff',
-                              borderRadius: '6px'
-                            }}
-                          >
-                            <i className="fas fa-eye me-1"></i>
-                            View
-                          </button>
-                          <button 
-                            className="btn btn-sm me-2"
-                            onClick={() => handleEditProjectDetails(p.id)}
-                            style={{ 
-                              backgroundColor: '#17a2b8',
-                              borderColor: '#17a2b8',
-                              color: 'white',
-                              borderRadius: '6px'
-                            }}
-                          >
-                            <i className="fas fa-edit me-1"></i>
-                            Edit
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-danger"
-                            style={{ borderRadius: '6px' }}
-                          >
-                            <i className="fas fa-trash me-1"></i>
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        {error && <div className="alert" style={{ backgroundColor: 'rgba(220, 53, 69, 0.1)', borderColor: 'var(--danger-color)', color: 'var(--danger-color)', borderRadius: '8px', padding: '12px 16px' }}>{error}</div>}
+
+        {activeTab === 'create' && (
+          <div className="card border-0 shadow-sm projects-card">
+            <div className="card-body">
+              <h5 className="card-title fw-bold card-title-projects" style={{ color: 'var(--text-primary)', marginBottom: '16px' }}>
+                <i className="fas fa-plus-circle me-2" style={{ color: '#4F7BFF' }}></i>
+                Create New Project
+              </h5>
+              <form onSubmit={handleCreateProject} style={{ backgroundColor: '#2a2a2a' }}>
+                <div className="mb-3">
+                  <label className="form-label projects-form-label">
+                    Project Name
+                  </label>
+                  <input 
+                    type="text" 
+                    className="form-control projects-form-control" 
+                    value={newProject.name} 
+                    onChange={(e) => setNewProject({ ...newProject, name: e.target.value })} 
+                    required 
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label projects-form-label">
+                    Client
+                  </label>
+                  <select 
+                    className="form-select projects-form-control" 
+                    value={newProject.clientId} 
+                    onChange={(e) => handleClientChange(+e.target.value)} 
+                    required
+                  >
+                    <option value={0} disabled>Select Client</option>
+                    {clients && clients.map(c => <option key={c.id} value={c.id}>{c.clientName}</option>)}
+                  </select>
+                  <small style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Clients loaded: {clients ? clients.length : 0}</small>
+                </div>
+                
+                <div className="mb-3">
+                  <label className="form-label projects-form-label">
+                    Client SPOC
+                  </label>
+                  <select 
+                    className="form-select projects-form-control" 
+                    value={newProject.spocId} 
+                    onChange={(e) => setNewProject({ ...newProject, spocId: +e.target.value })} 
+                    required 
+                    disabled={!spocs || !spocs.length}
+                  >
+                    <option value={0} disabled>Select Client SPOC</option>
+                    {spocs && spocs.map(spoc => <option key={spoc.id} value={spoc.id}>{spoc.name} ({spoc.email})</option>)}
+                  </select>
+                  {(!spocs || !spocs.length) && <small style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Select a client first to see SPOCs</small>}
+                </div>
+                
+                <div className="mb-3">
+                  <label className="form-label projects-form-label">
+                    Overall Project Delivery Date & Time
+                  </label>
+                  <input 
+                    type="date" 
+                    className="form-control projects-form-control" 
+                    value={newProject.endDate} 
+                    onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })} 
+                  />
+                </div>
+                
+                <div className="mb-3">
+                  <label className="form-label projects-form-label">
+                    Brief Received On
+                  </label>
+                  <input 
+                    type="date" 
+                    className="form-control projects-form-control" 
+                    value={newProject.briefReceivedOn} 
+                    onChange={(e) => setNewProject({ ...newProject, briefReceivedOn: e.target.value })} 
+                  />
+                </div>
+                
+                <div className="mb-3">
+                  <label className="form-label projects-form-label">
+                    Project Estimated Time (hours)
+                  </label>
+                  <input 
+                    type="number" 
+                    className="form-control projects-form-control" 
+                    placeholder="Enter estimated time in hours"
+                    value={newProject.estimatedTime} 
+                    onChange={(e) => setNewProject({ ...newProject, estimatedTime: e.target.value })} 
+                  />
+                </div>
+                
+                <button 
+                  type="submit" 
+                  className="btn projects-btn-primary" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-plus me-2"></i>
+                      Create Project
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {activeTab === 'existing' && (
+          <div className="card border-0 shadow-sm projects-card">
+            <div className="card-body">
+              <h5 className="card-title fw-bold mb-4 card-title-projects" style={{ color: 'var(--text-primary)', marginBottom: '16px' }}>
+                <i className="fas fa-list me-2" style={{ color: '#4F7BFF' }}></i>
+                All Projects
+              </h5>
+              {isLoading ? (
+                <p style={{ color: 'var(--text-primary)' }}>Loading projects...</p>
+              ) : (
+                <div className="table-responsive" style={{ backgroundColor: '#2a2a2a' }}>
+                  <table className="table table-hover align-middle projects-table" style={{ backgroundColor: '#2a2a2a', color: '#f5f5f5', border: 'none' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ backgroundColor: '#2d2d2d', color: '#f5f5f5', border: '1px solid #404040' }}>Name</th>
+                        <th style={{ backgroundColor: '#2d2d2d', color: '#f5f5f5', border: '1px solid #404040' }}>Client</th>
+                        <th style={{ backgroundColor: '#2d2d2d', color: '#f5f5f5', border: '1px solid #404040' }}>Status</th>
+                        <th style={{ backgroundColor: '#2d2d2d', color: '#f5f5f5', border: '1px solid #404040' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {projects.map(p => (
+                        <tr key={p.id} style={{ backgroundColor: '#2a2a2a' }}>
+                          <td style={{ backgroundColor: '#2a2a2a', color: '#f5f5f5', border: '1px solid #404040' }}>
+                            <div style={{ color: '#f5f5f5', fontWeight: '600' }}>{p.name}</div>
+                          </td>
+                          <td style={{ backgroundColor: '#2a2a2a', color: '#f5f5f5', border: '1px solid #404040' }}>
+                            <span style={{ color: '#b3b3b3', fontSize: '14px' }}>{p.client.name}</span>
+                          </td>
+                          <td style={{ backgroundColor: '#2a2a2a', color: '#f5f5f5', border: '1px solid #404040' }}>
+                            <span 
+                              className="badge" 
+                              style={{
+                                fontSize: '11px',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                fontWeight: '600',
+                                backgroundColor: p.isActive ? '#28a745' : '#6c757d',
+                                color: 'white'
+                              }}
+                            >
+                              {p.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td style={{ backgroundColor: '#2a2a2a', color: '#f5f5f5', border: '1px solid #404040' }}>
+                            <button 
+                              className="btn btn-sm me-2" 
+                              style={{
+                                backgroundColor: '#4F7BFF',
+                                borderColor: '#4F7BFF',
+                                color: 'white',
+                                fontSize: '12px',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontWeight: '600',
+                                marginRight: '8px'
+                              }}
+                              onClick={() => handleViewProjectDetails(p.id)}
+                            >
+                              <i className="fas fa-eye me-1"></i>
+                              View
+                            </button>
+                            <button 
+                              className="btn btn-sm me-2"
+                              style={{
+                                backgroundColor: '#17a2b8',
+                                borderColor: '#17a2b8',
+                                color: 'white',
+                                fontSize: '12px',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontWeight: '600',
+                                marginRight: '8px'
+                              }}
+                              onClick={() => handleEditProjectDetails(p.id)}
+                            >
+                              <i className="fas fa-edit me-1"></i>
+                              Edit
+                            </button>
+                            <button 
+                              className="btn btn-sm"
+                              style={{
+                                backgroundColor: '#dc3545',
+                                borderColor: '#dc3545',
+                                color: 'white',
+                                fontSize: '12px',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontWeight: '600'
+                              }}
+                            >
+                              <i className="fas fa-trash me-1"></i>
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </ProjectsLayout>
   );
 };

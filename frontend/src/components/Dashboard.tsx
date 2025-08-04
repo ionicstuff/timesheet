@@ -75,6 +75,37 @@ customStyle.textContent = `
 document.head.appendChild(customStyle);
 
 const Dashboard: React.FC = () => {
+  // Apply dark theme styles
+  const sidebarStyle = {
+    width: '240px',
+    minHeight: '100vh',
+    backgroundColor: 'var(--sidebar-bg)',
+    color: 'var(--text-primary)'
+  };
+
+  const mainContentStyle = {
+    minHeight: '100vh',
+    backgroundColor: 'var(--primary-bg)',
+    position: 'relative',
+  };
+
+  const cardStyle = {
+    backgroundColor: 'var(--card-bg)',
+    border: `1px solid var(--border-color)`,
+    borderRadius: '8px',
+    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+    padding: '16px',
+    marginBottom: '16px'
+  };
+
+  const titleStyle = {
+    color: 'var(--text-primary)',
+    marginBottom: '8px'
+  };
+
+  const progressStyle = {
+    background: 'var(--accent-blue)'
+  };
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -257,18 +288,14 @@ const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboar
   };
 
   return (
-  <div className="d-flex" style={{ 
-    minHeight: '100vh', 
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    position: 'relative'
-  }}>
-
+  <div className="d-flex" style={{
+    minHeight: '100vh',
+    backgroundColor: 'var(--primary-bg)',
+    position: 'relative',
+  } as React.CSSProperties}>
+      
       {/* Sidebar */}
-      <div className="text-white shadow-lg" style={{ 
-        width: '240px', 
-        minHeight: '100vh', 
-        background: `linear-gradient(135deg, ${colorTheme.primary} 0%, ${colorTheme.secondary} 100%)` 
-      }}>
+      <div className="text-white shadow-lg" style={sidebarStyle}>
         <div className="p-2">
           {/* Logo and Company */}
           <div className="d-flex align-items-center mb-4 pb-3 border-bottom border-light border-opacity-25">
@@ -285,8 +312,8 @@ const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboar
               <i className="fas fa-clock text-white" style={{ fontSize: '20px' }}></i>
             </div>
             <div>
-              <h5 className="fw-bold mb-0">TimeSheet Pro</h5>
-              <small className="text-light opacity-75">Evolute Global</small>
+              <h5 className="h5 mb-0">TimeSheet Pro</h5>
+              <small className="text-sm" style={{ color: 'var(--text-secondary)', opacity: 0.75 }}>Evolute Global</small>
             </div>
           </div>
           
@@ -434,12 +461,13 @@ const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboar
       <div className="flex-grow-1">
         {/* Header */}
         <nav className="navbar navbar-expand-lg shadow-sm" style={{ 
-          backgroundColor: colorTheme.white, 
-          borderBottom: `1px solid ${colorTheme.light}` 
+          backgroundColor: 'var(--card-bg)', 
+          borderBottom: `1px solid var(--border-color)`,
+          color: 'var(--text-primary)'
         }}>
           <div className="container-fluid px-4">
             <div className="d-flex align-items-center">
-              <h4 className="mb-0 fw-bold" style={{ color: colorTheme.primary }}>{
+              <h4 className="h4 mb-0">{
                 currentView === 'dashboard' ? 'Dashboard' : 
                 currentView === 'clients' ? 'Client Management' :
                 currentView === 'onboardClient' ? 'Client Onboarding' :
@@ -462,7 +490,7 @@ const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboar
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="me-2 text-end">
-                    <div className="fw-bold" style={{ color: colorTheme.primary, fontSize: '14px' }}>
+                    <div className="fw-bold" style={{ color: 'var(--text-primary)', fontSize: '14px' }}>
                       {user ? `${user.firstName} ${user.lastName}` : 'User'}
                     </div>
                     <div className="text-muted" style={{ fontSize: '12px' }}>
@@ -519,10 +547,10 @@ const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboar
               <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center">
                   <div>
-                    <h2 className="fw-bold mb-1" style={{ color: colorTheme.primary }}>Welcome back, {user?.firstName || 'User'}!</h2>
-                    <p className="text-muted mb-0">Here's what's happening with your timesheet today.</p>
+                    <h2 className="h2 mb-1">Welcome back, {user?.firstName || 'User'}!</h2>
+                    <p className="text-md mb-0" style={{ color: 'var(--text-secondary)' }}>Here's what's happening with your timesheet today.</p>
                   </div>
-                  <div className="text-muted">
+                  <div style={{ color: 'var(--text-secondary)' }}>
                     <i className="fas fa-calendar me-2"></i>
                     {new Date().toLocaleDateString('en-US', { 
                       weekday: 'long', 
@@ -632,9 +660,9 @@ const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboar
             {/* Left Column */}
             <div className="col-md-8">
               {/* Time Tracking */}
-              <div className="card border-0 modern-card mb-4">
-                <div className="card-header border-0 d-flex justify-content-between align-items-center py-3" style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)' }}>
-                  <h5 className="mb-0 fw-bold" style={{ color: colorTheme.primary }}>
+              <div className="card border-0 mb-4" style={cardStyle}>
+                <div className="card-header border-0 d-flex justify-content-between align-items-center py-3" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  <h5 className="mb-0 fw-bold">
                     <i className="fas fa-stopwatch me-2" style={{ color: colorTheme.accent }}></i>
                     Time Tracking - Today
                   </h5>
@@ -720,9 +748,9 @@ const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboar
               </div>
               
               {/* Recent Activities */}
-              <div className="card border-0 shadow-sm mb-4">
-                <div className="card-header bg-white border-0 py-3">
-                  <h5 className="mb-0 fw-bold" style={{ color: colorTheme.primary }}>
+              <div className="card border-0 mb-4" style={cardStyle}>
+                <div className="card-header border-0 py-3" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  <h5 className="h5 mb-0">
                     <i className="fas fa-history me-2" style={{ color: colorTheme.accent }}></i>
                     Recent Activities
                   </h5>
@@ -773,9 +801,9 @@ const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboar
             {/* Right Column */}
             <div className="col-md-4">
               {/* Holidays */}
-              <div className="card border-0 shadow-sm mb-4">
-                <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
-                  <h5 className="mb-0 fw-bold" style={{ color: colorTheme.primary }}>
+              <div className="card border-0 mb-4" style={cardStyle}>
+                <div className="card-header border-0 d-flex justify-content-between align-items-center py-3" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  <h5 className="mb-0 fw-bold" style={{ color: 'var(--text-primary)' }}>
                     <i className="fas fa-calendar-alt me-2" style={{ color: colorTheme.accent }}></i>
                     Upcoming Holidays
                   </h5>
@@ -796,9 +824,9 @@ const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboar
               </div>
               
               {/* Team Status */}
-              <div className="card border-0 shadow-sm mb-4">
-                <div className="card-header bg-white border-0 py-3">
-                  <h5 className="mb-0 fw-bold" style={{ color: colorTheme.primary }}>
+              <div className="card border-0 mb-4" style={cardStyle}>
+                <div className="card-header border-0 py-3" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  <h5 className="mb-0 fw-bold" style={{ color: 'var(--text-primary)' }}>
                     <i className="fas fa-users me-2" style={{ color: colorTheme.accent }}></i>
                     Team Status
                   </h5>
@@ -835,9 +863,9 @@ const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboar
               </div>
               
               {/* Quick Actions */}
-              <div className="card border-0 shadow-sm">
-                <div className="card-header bg-white border-0 py-3">
-                  <h5 className="mb-0 fw-bold" style={{ color: colorTheme.primary }}>
+              <div className="card border-0" style={cardStyle}>
+                <div className="card-header border-0 py-3" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                  <h5 className="mb-0 fw-bold" style={{ color: 'var(--text-primary)' }}>
                     <i className="fas fa-bolt me-2" style={{ color: colorTheme.accent }}></i>
                     Quick Actions
                   </h5>

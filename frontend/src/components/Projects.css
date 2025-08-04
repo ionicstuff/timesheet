@@ -1,0 +1,343 @@
+/* Dark theme styles for project management */
+.projects-container {
+  background-color: var(--primary-bg);
+  min-height: 100vh;
+  color: var(--text-primary);
+  padding: 20px;
+}
+
+.projects-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.projects-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.projects-form-control {
+  background-color: var(--secondary-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px;
+}
+
+.projects-form-control:focus {
+  background-color: var(--secondary-bg) !important;
+  border-color: var(--accent-blue) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(79, 123, 255, 0.25) !important;
+}
+
+.projects-form-control::placeholder {
+  color: var(--text-secondary) !important;
+}
+
+.projects-form-label {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.projects-btn-primary {
+  background-color: var(--accent-blue) !important;
+  border-color: var(--accent-blue) !important;
+  color: white !important;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: 600;
+}
+
+.projects-btn-primary:hover {
+  background-color: #3d6aff !important;
+  border-color: #3d6aff !important;
+  color: white !important;
+}
+
+.projects-btn-primary:disabled {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+.projects-nav-tabs {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.projects-nav-tabs .nav-link {
+  color: var(--text-secondary) !important;
+  border: none;
+  background: transparent;
+}
+
+.projects-nav-tabs .nav-link.active {
+  color: var(--text-primary) !important;
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-bottom-color: var(--card-bg) !important;
+}
+
+.projects-table,
+.projects-table.table,
+.table.projects-table {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border: none !important;
+}
+
+.projects-table th,
+.projects-table.table th,
+.table.projects-table th {
+  background-color: var(--secondary-bg) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 12px;
+}
+
+.projects-table td,
+.projects-table.table td,
+.table.projects-table td {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  padding: 12px;
+}
+
+.projects-table tbody tr,
+.projects-table.table tbody tr,
+.table.projects-table tbody tr {
+  background-color: var(--card-bg) !important;
+}
+
+.projects-table tbody tr:hover,
+.projects-table.table tbody tr:hover,
+.table.projects-table tbody tr:hover {
+  background-color: var(--secondary-bg) !important;
+}
+
+.projects-table tbody tr:hover td,
+.projects-table.table tbody tr:hover td,
+.table.projects-table tbody tr:hover td {
+  background-color: var(--secondary-bg) !important;
+}
+
+/* Additional overrides for Bootstrap table classes */
+.projects-container .table-responsive {
+  background-color: var(--card-bg) !important;
+}
+
+.projects-container .card-body {
+  background-color: var(--card-bg) !important;
+}
+
+/* Force dark theme on all Bootstrap components within projects container */
+.projects-container .card {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+}
+
+.projects-container .table {
+  --bs-table-bg: var(--card-bg) !important;
+  --bs-table-color: var(--text-primary) !important;
+  --bs-table-border-color: var(--border-color) !important;
+  --bs-table-hover-bg: var(--secondary-bg) !important;
+  --bs-table-hover-color: var(--text-primary) !important;
+}
+
+.projects-container .table > :not(caption) > * > * {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.projects-container .table thead th {
+  background-color: var(--secondary-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.projects-container .table tbody td {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.projects-container .table tbody tr:hover td {
+  background-color: var(--secondary-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Ultra-high specificity overrides for Bootstrap */
+.projects-container .card .card-body .table-responsive .table.table-hover.align-middle.projects-table {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border: none !important;
+}
+
+.projects-container .card .card-body .table-responsive .table.table-hover.align-middle.projects-table thead tr th {
+  background-color: var(--secondary-bg) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.projects-container .card .card-body .table-responsive .table.table-hover.align-middle.projects-table tbody tr td {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.projects-container .card .card-body .table-responsive .table.table-hover.align-middle.projects-table tbody tr {
+  background-color: var(--card-bg) !important;
+}
+
+.projects-container .card .card-body .table-responsive .table.table-hover.align-middle.projects-table tbody tr:hover {
+  background-color: var(--secondary-bg) !important;
+}
+
+.projects-container .card .card-body .table-responsive .table.table-hover.align-middle.projects-table tbody tr:hover td {
+  background-color: var(--secondary-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Force override any remaining Bootstrap table defaults */
+.projects-container .table-responsive {
+  background-color: var(--card-bg) !important;
+}
+
+.projects-container .table-responsive .table {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  --bs-table-bg: var(--card-bg) !important;
+  --bs-table-color: var(--text-primary) !important;
+  --bs-table-border-color: var(--border-color) !important;
+  --bs-table-striped-bg: var(--secondary-bg) !important;
+  --bs-table-striped-color: var(--text-primary) !important;
+  --bs-table-active-bg: var(--secondary-bg) !important;
+  --bs-table-active-color: var(--text-primary) !important;
+  --bs-table-hover-bg: var(--secondary-bg) !important;
+  --bs-table-hover-color: var(--text-primary) !important;
+}
+
+.project-name {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+}
+
+.project-client {
+  color: var(--text-secondary) !important;
+  font-size: 14px;
+}
+
+.status-badge {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.status-active {
+  background-color: #28a745 !important;
+  color: white !important;
+}
+
+.status-inactive {
+  background-color: #6c757d !important;
+  color: white !important;
+}
+
+.action-btn {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.btn-view {
+  background-color: var(--accent-blue) !important;
+  border-color: var(--accent-blue) !important;
+  color: white !important;
+}
+
+.btn-view:hover {
+  background-color: #3d6aff !important;
+  border-color: #3d6aff !important;
+  color: white !important;
+}
+
+.btn-edit {
+  background-color: #17a2b8 !important;
+  border-color: #17a2b8 !important;
+  color: white !important;
+}
+
+.btn-edit:hover {
+  background-color: #138496 !important;
+  border-color: #117a8b !important;
+  color: white !important;
+}
+
+.btn-delete {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: white !important;
+}
+
+.btn-delete:hover {
+  background-color: #c82333 !important;
+  border-color: #bd2130 !important;
+  color: white !important;
+}
+
+.projects-alert-error {
+  background-color: rgba(220, 53, 69, 0.1) !important;
+  border-color: #dc3545 !important;
+  color: #dc3545 !important;
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.card-title-projects {
+  color: var(--text-primary) !important;
+  margin-bottom: 16px;
+}
+
+.helper-text {
+  color: var(--text-secondary) !important;
+  font-size: 11px;
+}
+
+/* Override Bootstrap default styles */
+.projects-container .card {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+}
+
+.projects-container .form-control,
+.projects-container .form-select {
+  background-color: var(--secondary-bg) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.projects-container .form-control:focus,
+.projects-container .form-select:focus {
+  background-color: var(--secondary-bg) !important;
+  border-color: var(--accent-blue) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(79, 123, 255, 0.25) !important;
+}
+
+.projects-container .table {
+  color: var(--text-primary) !important;
+}
+
+.projects-container .table th,
+.projects-container .table td {
+  border-color: var(--border-color) !important;
+}

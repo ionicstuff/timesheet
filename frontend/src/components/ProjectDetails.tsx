@@ -4,69 +4,39 @@ import { useAuth } from '../context/AuthContext';
 import ProjectService, { Project, ProjectDetails as ProjectDetailsType, ProjectAttachment } from '../services/project.service';
 import Toast from './Toast';
 
-// Enhanced CSS for modern UI
+// Dark theme styles for Project Details
 const customStyle = document.createElement('style');
 customStyle.textContent = `
-  .white-placeholder::placeholder {
-    color: rgba(255, 255, 255, 0.7) !important;
-    opacity: 1;
-  }
-  .white-placeholder::-webkit-input-placeholder {
-    color: rgba(255, 255, 255, 0.7) !important;
-  }
-  .white-placeholder::-moz-placeholder {
-    color: rgba(255, 255, 255, 0.7) !important;
-  }
-  .white-placeholder:-ms-input-placeholder {
-    color: rgba(255, 255, 255, 0.7) !important;
-  }
-  
   .modern-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3) !important;
     transition: all 0.3s ease;
   }
-  
+
   .modern-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 12px 16px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  .modern-card .card-header {
+    background-color: var(--secondary-bg) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
   }
   
+  .modern-card .card-body {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+  }
+
   .gradient-text {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--text-primary) !important;
+    font-weight: 600;
   }
   
-  .pulse-animation {
-    animation: pulse 2s infinite;
-  }
-  
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(126, 200, 236, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(126, 200, 236, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(126, 200, 236, 0); }
-  }
-  
-  .glass-effect {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-  
-  .stat-card {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-  }
-  
-  .stat-card:hover {
-    transform: scale(1.02);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  .project-details strong {
+    color: var(--text-primary) !important;
   }
 `;
 document.head.appendChild(customStyle);
@@ -305,7 +275,7 @@ const ProjectDetails: React.FC = () => {
             <div className="container-fluid px-4">
               <div className="d-flex align-items-center">
                 <h4 className="mb-0 fw-bold" style={{ color: '#273C63' }}>
-                  Project Details
+                  Project Detailsnoddy
                 </h4>
               </div>
               <div className="navbar-nav ms-auto d-flex align-items-center">
@@ -347,7 +317,7 @@ const ProjectDetails: React.FC = () => {
                   <span className={project.isActive ? 'badge bg-success' : 'badge bg-danger'}>{project.isActive ? 'Active' : 'Inactive'}</span>
                 </div>
                 <div className="card-body">
-                  <h5 className="card-title">Project Overview</h5>
+                  <h5 className="card-title">Project Overviewsssss</h5>
                   <div className="mb-3">
                     <strong>Client:</strong> {project.client.name}<br/>
                     <strong>Manager:</strong> {project.manager?.firstName && project.manager?.lastName ? `${project.manager.firstName} ${project.manager.lastName}` : 'Not assigned'}<br/>

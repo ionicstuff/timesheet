@@ -99,6 +99,7 @@ export interface CreateClientRequest {
   hourlyRate?: number;
   currency?: string;
   notes?: string;
+  spocEmail?: string; // Added SPOC email field
 }
 
 class ClientService {
