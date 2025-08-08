@@ -76,7 +76,8 @@ const getProjects = async (req, res) => {
 
     res.json(transformedProjects);
   } catch (error) {
-    console.error('Error fetching projects:', error);
+
+    console.error('Error fetching projects from the database:', error);
     res.status(500).json({ message: 'Error fetching projects', error: error.message });
   }
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login: React.FC = () => {
@@ -7,7 +7,14 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
+  const [forgotPasswordError, setForgotPasswordError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isAuthenticated } = useAuth();
 
   // Redirect if already authenticated
@@ -16,6 +23,15 @@ const Login: React.FC = () => {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
+
+  // Handle success messages from navigation state
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the state to prevent the message from showing on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +52,56 @@ const Login: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!forgotPasswordEmail) {
+      setForgotPasswordError('Please enter your email address');
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    setForgotPasswordError('');
+    setForgotPasswordMessage('');
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: forgotPasswordEmail }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setForgotPasswordMessage(data.message);
+        setForgotPasswordEmail('');
+      } else {
+        setForgotPasswordError(data.message || 'Failed to send reset email');
+      }
+    } catch (error: any) {
+      setForgotPasswordError('Network error. Please try again.');
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
+  const openForgotPasswordModal = () => {
+    setShowForgotPassword(true);
+    setForgotPasswordEmail(email); // Pre-fill with login email if available
+    setForgotPasswordError('');
+    setForgotPasswordMessage('');
+  };
+
+  const closeForgotPasswordModal = () => {
+    setShowForgotPassword(false);
+    setForgotPasswordEmail('');
+    setForgotPasswordError('');
+    setForgotPasswordMessage('');
   };
 
   return (
@@ -112,8 +178,16 @@ const Login: React.FC = () => {
               <p style={{ fontSize: '0.9rem', color: '#6c757d', margin: 0 }}>Sign in to your account</p>
             </div>
             
+            {successMessage && (
+              <div className="alert alert-success" role="alert">
+                <i className="fas fa-check-circle me-2"></i>
+                {successMessage}
+              </div>
+            )}
+            
             {error && (
               <div className="alert alert-danger" role="alert">
+                <i className="fas fa-exclamation-circle me-2"></i>
                 {error}
               </div>
             )}
@@ -157,7 +231,7 @@ const Login: React.FC = () => {
                 type="submit"
                 className="btn w-100 mb-3"
                 style={{ 
-                  backgroundColor: '#dc3545', 
+                  backgroundColor: '#37b9c2ff', 
                   border: 'none',
                   color: 'white',
                   padding: '0.75rem',
@@ -224,13 +298,139 @@ const Login: React.FC = () => {
               </p>
               
               <div className="mt-3">
-                <a href="#" className="text-decoration-none me-3" style={{ fontSize: '0.8rem', color: '#6c757d' }}>Forgot Password?</a>
+                <button 
+                  type="button" 
+                  onClick={openForgotPasswordModal}
+                  className="btn btn-link p-0 me-3 text-decoration-none" 
+                  style={{ fontSize: '0.8rem', color: '#6c757d', border: 'none' }}
+                >
+                  Forgot Password?
+                </button>
                 <a href="#" className="text-decoration-none" style={{ fontSize: '0.8rem', color: '#273C63' }}>Need Help?</a>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header border-0 pb-0">
+                <div className="w-100 text-center">
+                  <i className="fas fa-key" style={{ fontSize: '2.5rem', color: '#273C63', marginBottom: '1rem' }}></i>
+                  <h4 className="modal-title" style={{ color: '#273C63', fontWeight: 'bold' }}>Reset Password</h4>
+                  <p className="text-muted mb-0">Enter your email to receive reset instructions</p>
+                </div>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={closeForgotPasswordModal}
+                  aria-label="Close"
+                ></button>
+              </div>
+              
+              <div className="modal-body pt-3">
+                {forgotPasswordMessage && (
+                  <div className="alert alert-success" role="alert">
+                    <i className="fas fa-check-circle me-2"></i>
+                    {forgotPasswordMessage}
+                  </div>
+                )}
+                
+                {forgotPasswordError && (
+                  <div className="alert alert-danger" role="alert">
+                    <i className="fas fa-exclamation-circle me-2"></i>
+                    {forgotPasswordError}
+                  </div>
+                )}
+                
+                {!forgotPasswordMessage && (
+                  <form onSubmit={handleForgotPassword}>
+                    <div className="mb-3">
+                      <label htmlFor="forgotPasswordEmail" className="form-label">
+                        <i className="fas fa-envelope me-2"></i>Email Address
+                      </label>
+                      <input
+                        type="email"
+                        className="form-control"
+                        id="forgotPasswordEmail"
+                        placeholder="Enter your registered email address"
+                        value={forgotPasswordEmail}
+                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                        required
+                        autoFocus
+                        style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+                      />
+                    </div>
+                    
+                    <div className="d-grid gap-2">
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={forgotPasswordLoading}
+                        style={{ 
+                          backgroundColor: '#dc3545', 
+                          borderColor: '#dc3545',
+                          padding: '0.75rem',
+                          fontSize: '0.95rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        {forgotPasswordLoading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Sending Reset Link...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-paper-plane me-2"></i>
+                            Send Reset Link
+                          </>
+                        )}
+                      </button>
+                      
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={closeForgotPasswordModal}
+                        disabled={forgotPasswordLoading}
+                      >
+                        <i className="fas fa-times me-2"></i>
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+                
+                {forgotPasswordMessage && (
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary"
+                      onClick={closeForgotPasswordModal}
+                    >
+                      <i className="fas fa-check me-2"></i>
+                      Close
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="modal-footer border-0 pt-0">
+                <div className="w-100 text-center">
+                  <small className="text-muted">
+                    <i className="fas fa-info-circle me-1"></i>
+                    You will receive an email with password reset instructions if an account with this email exists.
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

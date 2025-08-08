@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './components/Login';
+import ResetPassword from './components/ResetPassword';
 import Dashboard from './components/Dashboard';
 import ProjectDetails from './components/ProjectDetails';
 import ProjectView from './components/ProjectView';
@@ -18,6 +19,8 @@ function App() {
         <div className="App">
           <Routes>
             <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route
               path="/dashboard"
               element={

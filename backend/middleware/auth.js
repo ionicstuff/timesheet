@@ -27,6 +27,7 @@ const authMiddleware = async (req, res, next) => {
     }
 
     req.user = user;
+    req.user.userId = user.id; // Ensure userId is available for team queries
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);

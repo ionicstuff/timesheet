@@ -55,7 +55,7 @@ export interface Project {
   };
   createdAt: string;
   projectCode?: string;
-  status?: 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled';
+  status?: string;
   priority?: 'low' | 'medium' | 'high' | 'critical';
   estimatedHours?: number;
   actualHours?: number;
@@ -84,6 +84,21 @@ export interface Project {
   deliverables?: string;
   attachments?: ProjectAttachment[];
   clientLinks?: string;
+  // Additional properties from backend response
+  teamMembers?: Array<{
+    taskName?: string;
+    assignedTo?: {
+      firstName?: string;
+      lastName?: string;
+      department?: string;
+    };
+  }>;
+  tasks?: string[];
+  documents?: Array<{
+    filename: string;
+    originalName: string;
+    filePath: string;
+  }>;
 }
 
 export interface ProjectAttachment {

@@ -6,8 +6,12 @@ const {
   login,
   getCurrentUser,
   validateToken,
+  forgotPassword,
+  resetPassword,
   registerValidation,
-  loginValidation
+  loginValidation,
+  forgotPasswordValidation,
+  resetPasswordValidation
 } = require('../controllers/authController');
 
 const { authMiddleware } = require('../middleware/auth');
@@ -31,5 +35,15 @@ router.get('/me', authMiddleware, getCurrentUser);
 // @desc    Validate JWT token
 // @access  Private
 router.get('/validate', authMiddleware, validateToken);
+
+// @route   POST /api/auth/forgot-password
+// @desc    Request password reset
+// @access  Public
+router.post('/forgot-password', forgotPasswordValidation, forgotPassword);
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password with token
+// @access  Public
+router.post('/reset-password', resetPasswordValidation, resetPassword);
 
 module.exports = router;

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ProjectService, { Project } from '../services/project.service';
 import AddTaskModal from './AddTaskModal';
+import axios from 'axios';
 
 // Dark theme styles for Project View
 const customStyle = document.createElement('style');
@@ -38,6 +39,32 @@ customStyle.textContent = `
   .project-details strong {
     color: var(--text-primary) !important;
   }
+  
+  .list-group-item {
+    background-color: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.25em 0.5em;
+  }
+  
+  .text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .card-header h5, .card-header h6 {
+    color: var(--text-primary) !important;
+  }
+  
+  .text-muted {
+    color: var(--text-secondary) !important;
+  }
 `;
 document.head.appendChild(customStyle);
 
@@ -49,6 +76,19 @@ const ProjectView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+
+  // Helper function to get status badge class
+  const getStatusBadgeClass = (status: string | undefined): string => {
+    if (!status) return 'bg-secondary';
+    const statusLower = status.toLowerCase();
+    
+    if (statusLower === 'completed') return 'bg-success';
+    if (statusLower === 'active' || statusLower === 'in-progress') return 'bg-primary';
+    if (statusLower === 'on_hold' || statusLower === 'on-hold') return 'bg-warning';
+    if (statusLower === 'cancelled') return 'bg-danger';
+    
+    return 'bg-secondary';
+  };
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -187,36 +227,292 @@ const ProjectView: React.FC = () => {
         </nav>
         
         <div className="container-fluid px-4 py-4" style={{ backgroundColor: 'var(--primary-bg)', color: 'var(--text-primary)' }}>
-      {project ? (
-        <div className="card shadow-sm mb-4 modern-card">
-          <div className="card-header d-flex justify-content-between align-items-center">
-            <h5 className="mb-0 fw-bold gradient-text">{project.name}</h5>
-            <span className={project.isActive ? 'badge bg-success' : 'badge bg-danger'}>{project.isActive ? 'Active' : 'Inactive'}</span>
-          </div>
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="card-title mb-0" style={{ color: 'var(--text-primary)' }}>Project Overview</h5>
-              <button 
-                className="btn btn-primary" 
-                onClick={() => setShowAddTaskModal(true)}
-                style={{ backgroundColor: 'var(--accent-blue)', borderColor: 'var(--accent-blue)' }}
-              >
-                <i className="fas fa-plus me-2"></i>
-                Add Task
-              </button>
-            </div>
-            <div className="mb-3 project-details">
-              <strong>Client:</strong> {project.client.name}<br />
-              <strong>Manager:</strong> {project.manager?.firstName && project.manager?.lastName ? `${project.manager.firstName} ${project.manager.lastName}` : 'Not assigned'}<br />
-              <strong>Description:</strong> {project.description || 'No description available.'}<br />
-              <strong>Start Date:</strong> {project.startDate || 'Not set'}<br />
-              <strong>End Date:</strong> {project.endDate || 'Not set'}<br />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="alert alert-danger">Project not found</div>
-      )}
+          {project ? (
+            <>
+              {/* Project Header Card */}
+              <div className="card shadow-sm mb-4 modern-card">
+                <div className="card-header d-flex justify-content-between align-items-center">
+                  <h3 className="mb-0 fw-bold gradient-text">{project.name}</h3>
+                  <div className="d-flex align-items-center gap-2">
+                    <span className={project.isActive ? 'badge bg-success' : 'badge bg-danger'}>
+                      {project.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                    <button 
+                      className="btn btn-primary btn-sm" 
+                      onClick={() => setShowAddTaskModal(true)}
+                      style={{ backgroundColor: 'var(--accent-blue)', borderColor: 'var(--accent-blue)' }}
+                    >
+                      <i className="fas fa-plus me-1"></i>
+                      Add Task
+                    </button>
+                  </div>
+                </div>
+                <div className="card-body">
+                  <div className="row">
+                    <div className="col-md-8">
+                      <h5 className="mb-3" style={{ color: 'var(--text-primary)' }}>Project Overview</h5>
+                      <div className="row">
+                        <div className="col-sm-6">
+                          <p className="mb-2"><strong>Client:</strong> {project.client.name}</p>
+                          <p className="mb-2"><strong>Manager:</strong> {project.manager?.firstName && project.manager?.lastName ? `${project.manager.firstName} ${project.manager.lastName}` : 'Not assigned'}</p>
+                          <p className="mb-2"><strong>Status:</strong> <span className={`badge ${getStatusBadgeClass(project.status)}`}>{project.status || 'Planning'}</span></p>
+                        </div>
+                        <div className="col-sm-6">
+                          <p className="mb-2"><strong>Start Date:</strong> {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}</p>
+                          <p className="mb-2"><strong>End Date:</strong> {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Not set'}</p>
+                          <p className="mb-2"><strong>Priority:</strong> <span className={`badge ${project.priority === 'high' ? 'bg-danger' : project.priority === 'medium' ? 'bg-warning' : 'bg-info'}`}>{project.priority || 'Medium'}</span></p>
+                        </div>
+                      </div>
+                      {project.description && (
+                        <div className="mt-3">
+                          <p className="mb-1"><strong>Description:</strong></p>
+                          <p className="text-muted">{project.description}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="col-md-4">
+                      <div className="bg-light p-3 rounded" style={{ backgroundColor: 'var(--secondary-bg) !important' }}>
+                        <h6 className="mb-3" style={{ color: 'var(--text-primary)' }}>Quick Stats</h6>
+                        <div className="d-flex justify-content-between mb-2">
+                          <span>Team Members:</span>
+                          <span className="fw-bold">{project.teamMembers?.length || 0}</span>
+                        </div>
+                        <div className="d-flex justify-content-between mb-2">
+                          <span>Tasks:</span>
+                          <span className="fw-bold">{project.tasks?.length || 0}</span>
+                        </div>
+                        <div className="d-flex justify-content-between mb-2">
+                          <span>Documents:</span>
+                          <span className="fw-bold">{project.documents?.length || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SPOC Information Card */}
+              {project.spoc && (
+                <div className="card shadow-sm mb-4 modern-card">
+                  <div className="card-header">
+                    <h5 className="mb-0 fw-bold" style={{ color: 'var(--text-primary)' }}>
+                      <i className="fas fa-user-tie me-2" style={{ color: 'var(--accent-blue)' }}></i>
+                      Client SPOC Information
+                    </h5>
+                  </div>
+                  <div className="card-body">
+                    <div className="row">
+                      <div className="col-md-6">
+                        <p className="mb-2"><strong>Name:</strong> {project.spoc.name}</p>
+                        <p className="mb-2"><strong>Email:</strong> 
+                          <a href={`mailto:${project.spoc.email}`} className="ms-2 text-decoration-none">
+                            {project.spoc.email}
+                          </a>
+                        </p>
+                      </div>
+                      <div className="col-md-6">
+                        {project.spoc.phone && <p className="mb-2"><strong>Phone:</strong> {project.spoc.phone}</p>}
+                        {project.spoc.designation && <p className="mb-2"><strong>Designation:</strong> {project.spoc.designation}</p>}
+                        {project.spoc.department && <p className="mb-2"><strong>Department:</strong> {project.spoc.department}</p>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="row">
+                {/* Team Members Card */}
+                <div className="col-md-6 mb-4">
+                  <div className="card shadow-sm modern-card h-100">
+                    <div className="card-header">
+                      <h5 className="mb-0 fw-bold" style={{ color: 'var(--text-primary)' }}>
+                        <i className="fas fa-users me-2" style={{ color: 'var(--accent-blue)' }}></i>
+                        Team Members
+                      </h5>
+                    </div>
+                    <div className="card-body">
+                      {project.teamMembers && project.teamMembers.length > 0 ? (
+                        <div className="list-group list-group-flush">
+                          {project.teamMembers.map((member, index) => (
+                            <div key={index} className="list-group-item" style={{ backgroundColor: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+                              <div className="d-flex align-items-center">
+                                <div className="me-3">
+                                  <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px', backgroundColor: 'var(--accent-blue) !important' }}>
+                                    <span className="text-white fw-bold">
+                                      {member.assignedTo?.firstName?.[0]}{member.assignedTo?.lastName?.[0]}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex-grow-1">
+                                  <h6 className="mb-1">{member.assignedTo?.firstName} {member.assignedTo?.lastName}</h6>
+                                  {member.assignedTo?.department && (
+                                    <small className="text-muted">{member.assignedTo.department}</small>
+                                  )}
+                                  {member.taskName && (
+                                    <div className="mt-1">
+                                      <small className="badge bg-light text-dark">{member.taskName}</small>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4">
+                          <i className="fas fa-users fa-2x text-muted mb-3"></i>
+                          <p className="text-muted">No team members assigned yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tasks Overview Card */}
+                <div className="col-md-6 mb-4">
+                  <div className="card shadow-sm modern-card h-100">
+                    <div className="card-header">
+                      <h5 className="mb-0 fw-bold" style={{ color: 'var(--text-primary)' }}>
+                        <i className="fas fa-tasks me-2" style={{ color: 'var(--accent-blue)' }}></i>
+                        Tasks Overview
+                      </h5>
+                    </div>
+                    <div className="card-body">
+                      {project.tasks && project.tasks.length > 0 ? (
+                        <div className="list-group list-group-flush">
+                          {project.tasks.slice(0, 5).map((task, index) => (
+                            <div key={index} className="list-group-item" style={{ backgroundColor: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+                              <div className="d-flex align-items-center justify-content-between">
+                                <span className="fw-medium">{task}</span>
+                                <span className="badge bg-secondary">Assigned</span>
+                              </div>
+                            </div>
+                          ))}
+                          {project.tasks.length > 5 && (
+                            <div className="text-center mt-2">
+                              <small className="text-muted">And {project.tasks.length - 5} more tasks...</small>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4">
+                          <i className="fas fa-tasks fa-2x text-muted mb-3"></i>
+                          <p className="text-muted">No tasks created yet</p>
+                          <button 
+                            className="btn btn-sm btn-outline-primary" 
+                            onClick={() => setShowAddTaskModal(true)}
+                          >
+                            Create First Task
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Project Details & Documents Row */}
+              <div className="row">
+                {/* Project Specifications Card */}
+                <div className="col-md-8 mb-4">
+                  <div className="card shadow-sm modern-card">
+                    <div className="card-header">
+                      <h5 className="mb-0 fw-bold" style={{ color: 'var(--text-primary)' }}>
+                        <i className="fas fa-clipboard-list me-2" style={{ color: 'var(--accent-blue)' }}></i>
+                        Project Specifications
+                      </h5>
+                    </div>
+                    <div className="card-body">
+                      {project.objectives || project.deliverables || project.teamNotes ? (
+                        <>
+                          {project.objectives && (
+                            <div className="mb-4">
+                              <h6 className="fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>Objectives</h6>
+                              <p className="text-muted">{project.objectives}</p>
+                            </div>
+                          )}
+                          {project.deliverables && (
+                            <div className="mb-4">
+                              <h6 className="fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>Deliverables</h6>
+                              <p className="text-muted">{project.deliverables}</p>
+                            </div>
+                          )}
+                          {project.teamNotes && (
+                            <div className="mb-4">
+                              <h6 className="fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>Team Notes</h6>
+                              <p className="text-muted">{project.teamNotes}</p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-center py-4">
+                          <i className="fas fa-clipboard-list fa-2x text-muted mb-3"></i>
+                          <p className="text-muted">Project specifications not defined yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Documents & Links Card */}
+                <div className="col-md-4 mb-4">
+                  <div className="card shadow-sm modern-card">
+                    <div className="card-header">
+                      <h5 className="mb-0 fw-bold" style={{ color: 'var(--text-primary)' }}>
+                        <i className="fas fa-paperclip me-2" style={{ color: 'var(--accent-blue)' }}></i>
+                        Documents & Links
+                      </h5>
+                    </div>
+                    <div className="card-body">
+                      {/* Documents Section */}
+                      {project.documents && project.documents.length > 0 ? (
+                        <div className="mb-3">
+                          <h6 className="fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>Files</h6>
+                          {project.documents.map((doc, index) => (
+                            <div key={index} className="d-flex align-items-center mb-2">
+                              <i className="fas fa-file me-2 text-muted"></i>
+                              <span className="small text-truncate" title={doc.originalName}>
+                                {doc.originalName}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-3">
+                          <i className="fas fa-folder-open fa-2x text-muted mb-2"></i>
+                          <p className="text-muted small">No documents uploaded</p>
+                        </div>
+                      )}
+                      
+                      {/* Client Links Section */}
+                      {project.clientLinks && (
+                        <div className="mt-3">
+                          <h6 className="fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>Client Links</h6>
+                          {project.clientLinks.split('\n').filter(link => link.trim()).map((link, index) => (
+                            <div key={index} className="mb-2">
+                              <a 
+                                href={link.trim()} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-decoration-none small d-flex align-items-center"
+                              >
+                                <i className="fas fa-external-link-alt me-2"></i>
+                                <span className="text-truncate" title={link.trim()}>
+                                  {link.trim().replace(/https?:\/\//, '').split('/')[0]}
+                                </span>
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="alert alert-danger">Project not found</div>
+          )}
         </div>
 
         {/* Add Task Modal */}

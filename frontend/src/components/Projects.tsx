@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import './Projects.css'; // Assuming you have a CSS file for styling
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import ProjectService, { Project, CreateProjectData } from '../services/project.service';
-import ProjectsLayout from './ProjectsLayout';
-import ClientService from '../services/client.service'; // Assuming a client service exists
-import AdminService from '../services/admin.service'; // Assuming an admin service for users
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import "./Projects.css"; // Assuming you have a CSS file for styling
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import ProjectService, {
+  Project,
+  CreateProjectData,
+} from "../services/project.service";
+import ProjectsLayout from "./ProjectsLayout";
+import ClientService from "../services/client.service"; // Assuming a client service exists
+import AdminService from "../services/admin.service"; // Assuming an admin service for users
+import axios from "axios";
 
 // Dynamic CSS injection for dark theme (similar to OnboardClient.tsx)
-const projectsFormStyle = document.createElement('style');
+const projectsFormStyle = document.createElement("style");
 projectsFormStyle.textContent = `
   .projects-container {
     background-color: var(--primary-bg) !important;
@@ -141,8 +144,6 @@ projectsFormStyle.textContent = `
 `;
 document.head.appendChild(projectsFormStyle);
 
-
-
 interface Spoc {
   id: number;
   name: string;
@@ -165,7 +166,7 @@ interface ClientWithSpocs {
 const Projects: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'create' | 'existing'>('existing');
+  const [activeTab, setActiveTab] = useState<"create" | "existing">("existing");
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<ClientWithSpocs[]>([]);
   const [spocs, setSpocs] = useState<Spoc[]>([]);
@@ -175,17 +176,17 @@ const Projects: React.FC = () => {
 
   // Form state
   const [newProject, setNewProject] = useState({
-    name: '',
+    name: "",
     clientId: 0,
     spocId: 0,
-    endDate: '',
-    briefReceivedOn: '',
-    estimatedTime: ''
+    endDate: "",
+    briefReceivedOn: "",
+    estimatedTime: "",
   });
 
   useEffect(() => {
     fetchClientsAndManagers();
-    if (activeTab === 'existing') {
+    if (activeTab === "existing") {
       fetchProjects();
     }
   }, [activeTab]);
@@ -196,7 +197,7 @@ const Projects: React.FC = () => {
       const fetchedProjects = await ProjectService.getProjects();
       setProjects(fetchedProjects);
     } catch (err) {
-      setError('Error fetching projects');
+      setError("Error fetching projects");
     } finally {
       setIsLoading(false);
     }
@@ -205,38 +206,45 @@ const Projects: React.FC = () => {
   const fetchClientsAndManagers = async () => {
     // Fetch clients with SPOCs
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3000/api/client-management/all', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        "http://localhost:3000/api/client-management/all",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
-      console.log('API Response:', response.data);
-      console.log('Clients data:', response.data.data);
+      );
+      console.log("API Response:", response.data);
+      console.log("Clients data:", response.data.data);
       setClients(response.data.data || []);
     } catch (err: any) {
-      console.error('Error fetching clients:', err);
-      setError(`Error fetching clients: ${err.message || 'Unknown error'}`);
+      console.error("Error fetching clients:", err);
+      setError(`Error fetching clients: ${err.message || "Unknown error"}`);
     }
 
     // Fetch users/managers separately
     try {
       const fetchedUsers = await AdminService.getUsers();
-      setManagers(fetchedUsers.users.filter((u: any) => u.role === 'manager' || u.role === 'admin'));
+      setManagers(
+        fetchedUsers.users.filter(
+          (u: any) => u.role === "manager" || u.role === "admin"
+        )
+      );
     } catch (err: any) {
-      console.error('Error fetching users:', err);
+      console.error("Error fetching users:", err);
       // Don't set error for managers as it's not critical for client dropdown
     }
   };
 
   const handleClientChange = (clientId: number) => {
-    console.log('Selected client ID:', clientId);
-    console.log('Available clients:', clients);
+    console.log("Selected client ID:", clientId);
+    console.log("Available clients:", clients);
     setNewProject({ ...newProject, clientId, spocId: 0 });
-    const client = clients.find(c => c.id === clientId);
-    console.log('Found client:', client);
+    const client = clients.find((c) => c.id === clientId);
+    console.log("Found client:", client);
     if (client) {
-      console.log('Client SPOCs:', client.spocs);
+      console.log("Client SPOCs:", client.spocs);
       setSpocs(client.spocs || []);
     } else {
       setSpocs([]);
@@ -253,21 +261,23 @@ const Projects: React.FC = () => {
         spocId: newProject.spocId,
         endDate: newProject.endDate || undefined,
         briefReceivedOn: newProject.briefReceivedOn || undefined,
-        estimatedTime: newProject.estimatedTime ? parseFloat(newProject.estimatedTime) : undefined
+        estimatedTime: newProject.estimatedTime
+          ? parseFloat(newProject.estimatedTime)
+          : undefined,
       };
       await ProjectService.createProject(projectData as any);
       setNewProject({
-        name: '',
+        name: "",
         clientId: 0,
         spocId: 0,
-        endDate: '',
-        briefReceivedOn: '',
-        estimatedTime: ''
+        endDate: "",
+        briefReceivedOn: "",
+        estimatedTime: "",
       });
       setSpocs([]);
-      setActiveTab('existing');
+      setActiveTab("existing");
     } catch (err) {
-      setError('Error creating project');
+      setError("Error creating project");
     } finally {
       setIsLoading(false);
     }
@@ -284,129 +294,202 @@ const Projects: React.FC = () => {
   return (
     <ProjectsLayout>
       <div className="projects-container">
-        <h2 className="fw-bold mb-4" style={{ color: 'var(--text-primary)', marginBottom: '16px' }}>Project Management</h2>
+        <h2
+          className="fw-bold mb-4"
+          style={{ color: "var(--text-primary)", marginBottom: "16px" }}
+        >
+          Project Management
+        </h2>
 
         <ul className="nav nav-tabs projects-nav-tabs mb-4">
           <li className="nav-item">
-            <a 
-              className={`nav-link ${activeTab === 'existing' ? 'active' : ''}`} 
-              href="#" 
-              onClick={() => setActiveTab('existing')}
+            <a
+              className={`nav-link ${activeTab === "existing" ? "active" : ""}`}
+              href="#"
+              onClick={() => setActiveTab("existing")}
             >
               Existing Projects
             </a>
           </li>
           <li className="nav-item">
-            <a 
-              className={`nav-link ${activeTab === 'create' ? 'active' : ''}`} 
-              href="#" 
-              onClick={() => setActiveTab('create')}
+            <a
+              className={`nav-link ${activeTab === "create" ? "active" : ""}`}
+              href="#"
+              onClick={() => setActiveTab("create")}
             >
               Create New Project
             </a>
           </li>
         </ul>
 
-        {error && <div className="alert" style={{ backgroundColor: 'rgba(220, 53, 69, 0.1)', borderColor: 'var(--danger-color)', color: 'var(--danger-color)', borderRadius: '8px', padding: '12px 16px' }}>{error}</div>}
+        {error && (
+          <div
+            className="alert"
+            style={{
+              backgroundColor: "rgba(220, 53, 69, 0.1)",
+              borderColor: "var(--danger-color)",
+              color: "var(--danger-color)",
+              borderRadius: "8px",
+              padding: "12px 16px",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
-        {activeTab === 'create' && (
+        {activeTab === "create" && (
           <div className="card border-0 shadow-sm projects-card">
             <div className="card-body">
-              <h5 className="card-title fw-bold card-title-projects" style={{ color: 'var(--text-primary)', marginBottom: '16px' }}>
-                <i className="fas fa-plus-circle me-2" style={{ color: '#4F7BFF' }}></i>
+              <h5
+                className="card-title fw-bold card-title-projects"
+                style={{ color: "var(--text-primary)", marginBottom: "16px" }}
+              >
+                <i
+                  className="fas fa-plus-circle me-2"
+                  style={{ color: "#4F7BFF" }}
+                ></i>
                 Create New Project
               </h5>
-              <form onSubmit={handleCreateProject} style={{ backgroundColor: '#2a2a2a' }}>
+              <form
+                onSubmit={handleCreateProject}
+                style={{ backgroundColor: "#2a2a2a" }}
+              >
                 <div className="mb-3">
                   <label className="form-label projects-form-label">
                     Project Name
                   </label>
-                  <input 
-                    type="text" 
-                    className="form-control projects-form-control" 
-                    value={newProject.name} 
-                    onChange={(e) => setNewProject({ ...newProject, name: e.target.value })} 
-                    required 
+                  <input
+                    type="text"
+                    className="form-control projects-form-control"
+                    value={newProject.name}
+                    onChange={(e) =>
+                      setNewProject({ ...newProject, name: e.target.value })
+                    }
+                    required
                   />
                 </div>
                 <div className="mb-3">
                   <label className="form-label projects-form-label">
                     Client
                   </label>
-                  <select 
-                    className="form-select projects-form-control" 
-                    value={newProject.clientId} 
-                    onChange={(e) => handleClientChange(+e.target.value)} 
+                  <select
+                    className="form-select projects-form-control"
+                    value={newProject.clientId}
+                    onChange={(e) => handleClientChange(+e.target.value)}
                     required
                   >
-                    <option value={0} disabled>Select Client</option>
-                    {clients && clients.map(c => <option key={c.id} value={c.id}>{c.clientName}</option>)}
+                    <option value={0} disabled>
+                      Select Client
+                    </option>
+                    {clients &&
+                      clients.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.clientName}
+                        </option>
+                      ))}
                   </select>
-                  <small style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Clients loaded: {clients ? clients.length : 0}</small>
+                  <small
+                    style={{ color: "var(--text-secondary)", fontSize: "11px" }}
+                  >
+                    Clients loaded: {clients ? clients.length : 0}
+                  </small>
                 </div>
-                
+
                 <div className="mb-3">
                   <label className="form-label projects-form-label">
                     Client SPOC
                   </label>
-                  <select 
-                    className="form-select projects-form-control" 
-                    value={newProject.spocId} 
-                    onChange={(e) => setNewProject({ ...newProject, spocId: +e.target.value })} 
-                    required 
+                  <select
+                    className="form-select projects-form-control"
+                    value={newProject.spocId}
+                    onChange={(e) =>
+                      setNewProject({ ...newProject, spocId: +e.target.value })
+                    }
+                    required
                     disabled={!spocs || !spocs.length}
                   >
-                    <option value={0} disabled>Select Client SPOC</option>
-                    {spocs && spocs.map(spoc => <option key={spoc.id} value={spoc.id}>{spoc.name} ({spoc.email})</option>)}
+                    <option value={0} disabled>
+                      Select Client SPOC
+                    </option>
+                    {spocs &&
+                      spocs.map((spoc) => (
+                        <option key={spoc.id} value={spoc.id}>
+                          {spoc.name} ({spoc.email})
+                        </option>
+                      ))}
                   </select>
-                  {(!spocs || !spocs.length) && <small style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Select a client first to see SPOCs</small>}
+                  {(!spocs || !spocs.length) && (
+                    <small
+                      style={{
+                        color: "var(--text-secondary)",
+                        fontSize: "11px",
+                      }}
+                    >
+                      Select a client first to see SPOCs
+                    </small>
+                  )}
                 </div>
-                
+
                 <div className="mb-3">
                   <label className="form-label projects-form-label">
                     Overall Project Delivery Date & Time
                   </label>
-                  <input 
-                    type="date" 
-                    className="form-control projects-form-control" 
-                    value={newProject.endDate} 
-                    onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })} 
+                  <input
+                    type="date"
+                    className="form-control projects-form-control"
+                    value={newProject.endDate}
+                    onChange={(e) =>
+                      setNewProject({ ...newProject, endDate: e.target.value })
+                    }
                   />
                 </div>
-                
+
                 <div className="mb-3">
                   <label className="form-label projects-form-label">
                     Brief Received On
                   </label>
-                  <input 
-                    type="date" 
-                    className="form-control projects-form-control" 
-                    value={newProject.briefReceivedOn} 
-                    onChange={(e) => setNewProject({ ...newProject, briefReceivedOn: e.target.value })} 
+                  <input
+                    type="date"
+                    className="form-control projects-form-control"
+                    value={newProject.briefReceivedOn}
+                    onChange={(e) =>
+                      setNewProject({
+                        ...newProject,
+                        briefReceivedOn: e.target.value,
+                      })
+                    }
                   />
                 </div>
-                
+
                 <div className="mb-3">
                   <label className="form-label projects-form-label">
                     Project Estimated Time (hours)
                   </label>
-                  <input 
-                    type="number" 
-                    className="form-control projects-form-control" 
+                  <input
+                    type="number"
+                    className="form-control projects-form-control"
                     placeholder="Enter estimated time in hours"
-                    value={newProject.estimatedTime} 
-                    onChange={(e) => setNewProject({ ...newProject, estimatedTime: e.target.value })} 
+                    value={newProject.estimatedTime}
+                    onChange={(e) =>
+                      setNewProject({
+                        ...newProject,
+                        estimatedTime: e.target.value,
+                      })
+                    }
                   />
                 </div>
-                
-                <button 
-                  type="submit" 
-                  className="btn projects-btn-primary" 
+
+                <button
+                  type="submit"
+                  className="btn projects-btn-primary"
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                      ></span>
                       Creating...
                     </>
                   ) : (
@@ -421,95 +504,179 @@ const Projects: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'existing' && (
+        {activeTab === "existing" && (
           <div className="card border-0 shadow-sm projects-card">
             <div className="card-body">
-              <h5 className="card-title fw-bold mb-4 card-title-projects" style={{ color: 'var(--text-primary)', marginBottom: '16px' }}>
-                <i className="fas fa-list me-2" style={{ color: '#4F7BFF' }}></i>
+              <h5
+                className="card-title fw-bold mb-4 card-title-projects"
+                style={{ color: "var(--text-primary)", marginBottom: "16px" }}
+              >
+                <i
+                  className="fas fa-list me-2"
+                  style={{ color: "#4F7BFF" }}
+                ></i>
                 All Projects
               </h5>
               {isLoading ? (
-                <p style={{ color: 'var(--text-primary)' }}>Loading projects...</p>
+                <p style={{ color: "var(--text-primary)" }}>
+                  Loading projects...
+                </p>
               ) : (
-                <div className="table-responsive" style={{ backgroundColor: '#2a2a2a' }}>
-                  <table className="table table-hover align-middle projects-table" style={{ backgroundColor: '#2a2a2a', color: '#f5f5f5', border: 'none' }}>
+                <div
+                  className="table-responsive"
+                  style={{ backgroundColor: "#2a2a2a" }}
+                >
+                  <table
+                    className="table table-hover align-middle projects-table"
+                    style={{
+                      backgroundColor: "#2a2a2a",
+                      color: "#f5f5f5",
+                      border: "none",
+                    }}
+                  >
                     <thead>
                       <tr>
-                        <th style={{ backgroundColor: '#2d2d2d', color: '#f5f5f5', border: '1px solid #404040' }}>Name</th>
-                        <th style={{ backgroundColor: '#2d2d2d', color: '#f5f5f5', border: '1px solid #404040' }}>Client</th>
-                        <th style={{ backgroundColor: '#2d2d2d', color: '#f5f5f5', border: '1px solid #404040' }}>Status</th>
-                        <th style={{ backgroundColor: '#2d2d2d', color: '#f5f5f5', border: '1px solid #404040' }}>Actions</th>
+                        <th
+                          style={{
+                            backgroundColor: "#2d2d2d",
+                            color: "#f5f5f5",
+                            border: "1px solid #404040",
+                          }}
+                        >
+                          Name
+                        </th>
+                        <th
+                          style={{
+                            backgroundColor: "#2d2d2d",
+                            color: "#f5f5f5",
+                            border: "1px solid #404040",
+                          }}
+                        >
+                          Client
+                        </th>
+                        <th
+                          style={{
+                            backgroundColor: "#2d2d2d",
+                            color: "#f5f5f5",
+                            border: "1px solid #404040",
+                          }}
+                        >
+                          Status
+                        </th>
+                        <th
+                          style={{
+                            backgroundColor: "#2d2d2d",
+                            color: "#f5f5f5",
+                            border: "1px solid #404040",
+                          }}
+                        >
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {projects.map(p => (
-                        <tr key={p.id} style={{ backgroundColor: '#2a2a2a' }}>
-                          <td style={{ backgroundColor: '#2a2a2a', color: '#f5f5f5', border: '1px solid #404040' }}>
-                            <div style={{ color: '#f5f5f5', fontWeight: '600' }}>{p.name}</div>
-                          </td>
-                          <td style={{ backgroundColor: '#2a2a2a', color: '#f5f5f5', border: '1px solid #404040' }}>
-                            <span style={{ color: '#b3b3b3', fontSize: '14px' }}>{p.client.name}</span>
-                          </td>
-                          <td style={{ backgroundColor: '#2a2a2a', color: '#f5f5f5', border: '1px solid #404040' }}>
-                            <span 
-                              className="badge" 
-                              style={{
-                                fontSize: '11px',
-                                padding: '4px 8px',
-                                borderRadius: '6px',
-                                fontWeight: '600',
-                                backgroundColor: p.isActive ? '#28a745' : '#6c757d',
-                                color: 'white'
-                              }}
+                      {projects.map((p) => (
+                        <tr key={p.id} style={{ backgroundColor: "#2a2a2a" }}>
+                          <td
+                            style={{
+                              backgroundColor: "#2a2a2a",
+                              color: "#f5f5f5",
+                              border: "1px solid #404040",
+                            }}
+                          >
+                            <div
+                              style={{ color: "#f5f5f5", fontWeight: "600" }}
                             >
-                              {p.isActive ? 'Active' : 'Inactive'}
+                              {p.name}
+                            </div>
+                          </td>
+                          <td
+                            style={{
+                              backgroundColor: "#2a2a2a",
+                              color: "#f5f5f5",
+                              border: "1px solid #404040",
+                            }}
+                          >
+                            <span
+                              style={{ color: "#b3b3b3", fontSize: "14px" }}
+                            >
+                              {p.client.name}
                             </span>
                           </td>
-                          <td style={{ backgroundColor: '#2a2a2a', color: '#f5f5f5', border: '1px solid #404040' }}>
-                            <button 
-                              className="btn btn-sm me-2" 
+                          <td
+                            style={{
+                              backgroundColor: "#2a2a2a",
+                              color: "#f5f5f5",
+                              border: "1px solid #404040",
+                            }}
+                          >
+                            <span
+                              className="badge"
                               style={{
-                                backgroundColor: '#4F7BFF',
-                                borderColor: '#4F7BFF',
-                                color: 'white',
-                                fontSize: '12px',
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                fontWeight: '600',
-                                marginRight: '8px'
+                                fontSize: "11px",
+                                padding: "4px 8px",
+                                borderRadius: "6px",
+                                fontWeight: "600",
+                                backgroundColor: p.isActive
+                                  ? "#28a745"
+                                  : "#6c757d",
+                                color: "white",
+                              }}
+                            >
+                              {p.isActive ? "Active" : "Inactive"}
+                            </span>
+                          </td>
+                          <td
+                            style={{
+                              backgroundColor: "#2a2a2a",
+                              color: "#f5f5f5",
+                              border: "1px solid #404040",
+                            }}
+                          >
+                            <button
+                              className="btn btn-sm me-2"
+                              style={{
+                                backgroundColor: "#4F7BFF",
+                                borderColor: "#4F7BFF",
+                                color: "white",
+                                fontSize: "12px",
+                                padding: "6px 12px",
+                                borderRadius: "6px",
+                                fontWeight: "600",
+                                marginRight: "8px",
                               }}
                               onClick={() => handleViewProjectDetails(p.id)}
                             >
                               <i className="fas fa-eye me-1"></i>
                               View
                             </button>
-                            <button 
+                            <button
                               className="btn btn-sm me-2"
                               style={{
-                                backgroundColor: '#17a2b8',
-                                borderColor: '#17a2b8',
-                                color: 'white',
-                                fontSize: '12px',
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                fontWeight: '600',
-                                marginRight: '8px'
+                                backgroundColor: "#17a2b8",
+                                borderColor: "#17a2b8",
+                                color: "white",
+                                fontSize: "12px",
+                                padding: "6px 12px",
+                                borderRadius: "6px",
+                                fontWeight: "600",
+                                marginRight: "8px",
                               }}
                               onClick={() => handleEditProjectDetails(p.id)}
                             >
                               <i className="fas fa-edit me-1"></i>
                               Edit
                             </button>
-                            <button 
+                            <button
                               className="btn btn-sm"
                               style={{
-                                backgroundColor: '#dc3545',
-                                borderColor: '#dc3545',
-                                color: 'white',
-                                fontSize: '12px',
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                fontWeight: '600'
+                                backgroundColor: "#dc3545",
+                                borderColor: "#dc3545",
+                                color: "white",
+                                fontSize: "12px",
+                                padding: "6px 12px",
+                                borderRadius: "6px",
+                                fontWeight: "600",
                               }}
                             >
                               <i className="fas fa-trash me-1"></i>
@@ -531,4 +698,3 @@ const Projects: React.FC = () => {
 };
 
 export default Projects;
-

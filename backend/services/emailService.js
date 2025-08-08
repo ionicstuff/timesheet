@@ -1,0 +1,133 @@
+const nodemailer = require('nodemailer');
+
+class EmailService {
+  constructor() {
+    this.transporter = null;
+    this.init();
+  }
+
+  async init() {
+    // Create transporter based on environment
+    if (process.env.NODE_ENV === 'production') {
+      // Production email configuration
+      this.transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: process.env.EMAIL_PORT || 587,
+        secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD,
+        },
+      });
+    } else {
+      // Development - use Ethereal Email for testing
+      try {
+        const testAccount = await nodemailer.createTestAccount();
+        this.transporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: {
+            user: testAccount.user,
+            pass: testAccount.pass,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to create test email account:', error);
+        // Fallback to console logging in development
+        this.transporter = {
+          sendMail: async (mailOptions) => {
+            console.log('📧 Email would be sent:');
+            console.log('To:', mailOptions.to);
+            console.log('Subject:', mailOptions.subject);
+            console.log('Content:', mailOptions.html || mailOptions.text);
+            return { messageId: 'development-mode' };
+          }
+        };
+      }
+    }
+  }
+
+  async sendPasswordResetEmail(email, firstName, resetToken) {
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    
+    const mailOptions = {
+      from: `"TimeSheet Pro" <${process.env.EMAIL_FROM || 'noreply@timesheet.com'}>`,
+      to: email,
+      subject: 'Password Reset Request - TimeSheet Pro',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset Request</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+            .header { background: linear-gradient(135deg, #273C63 0%, #66697D 100%); color: white; text-align: center; padding: 30px; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .content { padding: 30px; }
+            .btn { display: inline-block; background-color: #dc3545; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
+            .btn:hover { background-color: #c82333; }
+            .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; }
+            .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🕒 TimeSheet Pro</h1>
+              <p>Password Reset Request</p>
+            </div>
+            <div class="content">
+              <h2>Hello ${firstName},</h2>
+              <p>We received a request to reset the password for your TimeSheet Pro account. If you made this request, click the button below to reset your password:</p>
+              
+              <div style="text-align: center;">
+                <a href="${resetUrl}" class="btn">Reset Password</a>
+              </div>
+              
+              <div class="warning">
+                <strong>⚠️ Important:</strong>
+                <ul>
+                  <li>This link will expire in <strong>1 hour</strong></li>
+                  <li>If you didn't request this password reset, please ignore this email</li>
+                  <li>For security reasons, never share this link with anyone</li>
+                </ul>
+              </div>
+              
+              <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace;">${resetUrl}</p>
+              
+              <p>If you have any questions or concerns, please contact our support team.</p>
+              
+              <p>Best regards,<br>The TimeSheet Pro Team</p>
+            </div>
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} TimeSheet Pro by Evolute Global. All rights reserved.</p>
+              <p>This is an automated email. Please do not reply to this message.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📧 Password reset email sent successfully!');
+        console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+      }
+      
+      return info;
+    } catch (error) {
+      console.error('Failed to send password reset email:', error);
+      throw new Error('Failed to send password reset email');
+    }
+  }
+}
+
+module.exports = new EmailService();
