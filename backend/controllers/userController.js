@@ -733,6 +733,200 @@ const deactivateUser = async (req, res) => {
   }
 };
 
+// Get current user's complete profile information
+const getUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.user; // Get from auth middleware
+
+    const user = await User.findByPk(userId, {
+      include: [
+        {
+          model: RoleMaster,
+          as: 'roleMaster',
+          attributes: ['id', 'roleCode', 'roleName', 'description', 'level']
+        },
+        {
+          model: UserHierarchy,
+          as: 'hierarchyAsUser',
+          where: {
+            isActive: true,
+            effectiveFrom: { [Op.lte]: new Date() },
+            [Op.or]: [
+              { effectiveTo: null },
+              { effectiveTo: { [Op.gte]: new Date() } }
+            ]
+          },
+          required: false,
+          include: [
+            {
+              model: User,
+              as: 'parentUser',
+              attributes: ['id', 'firstName', 'lastName', 'email', 'designation', 'department']
+            }
+          ],
+          attributes: ['hierarchyLevel', 'relationshipType', 'effectiveFrom', 'effectiveTo']
+        },
+        {
+          model: UserHierarchy,
+          as: 'hierarchyAsParent',
+          where: {
+            isActive: true,
+            effectiveFrom: { [Op.lte]: new Date() },
+            [Op.or]: [
+              { effectiveTo: null },
+              { effectiveTo: { [Op.gte]: new Date() } }
+            ]
+          },
+          required: false,
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'firstName', 'lastName', 'email', 'designation', 'department']
+            }
+          ],
+          attributes: ['hierarchyLevel', 'relationshipType', 'effectiveFrom']
+        },
+        {
+          model: Client,
+          as: 'managedClients',
+          where: { isActive: true },
+          required: false,
+          attributes: ['id', 'clientName', 'email', 'status', 'industry']
+        },
+        {
+          model: Project,
+          as: 'managedProjects',
+          where: { isActive: true },
+          required: false,
+          attributes: ['id', 'projectName', 'status', 'startDate', 'endDate', 'budgetAmount', 'description']
+        }
+      ],
+      attributes: {
+        exclude: ['passwordHash', 'resetPasswordToken', 'resetPasswordExpires']
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User profile not found'
+      });
+    }
+
+    // Get additional profile statistics
+    const profileStats = {
+      // Team size (direct reports)
+      directReports: await UserHierarchy.count({
+        where: {
+          parentUserId: userId,
+          isActive: true,
+          effectiveFrom: { [Op.lte]: new Date() },
+          [Op.or]: [
+            { effectiveTo: null },
+            { effectiveTo: { [Op.gte]: new Date() } }
+          ]
+        }
+      }),
+      
+      // Total managed clients
+      managedClientsCount: await Client.count({
+        where: {
+          accountManagerId: userId,
+          isActive: true
+        }
+      }),
+      
+      // Total managed projects
+      managedProjectsCount: await Project.count({
+        where: {
+          projectManagerId: userId,
+          isActive: true
+        }
+      }),
+      
+      // Years of service
+      yearsOfService: user.dateOfJoining ? 
+        Math.floor((new Date() - new Date(user.dateOfJoining)) / (1000 * 60 * 60 * 24 * 365.25)) : 0
+    };
+
+    // Format the response with organized profile data
+    const profileData = {
+      // Basic Information
+      basicInfo: {
+        id: user.id,
+        employeeId: user.employeeId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: user.getFullName(),
+        email: user.email,
+        phone: user.phone,
+        profilePicture: user.profilePicture
+      },
+      
+      // Professional Information
+      professionalInfo: {
+        department: user.department,
+        designation: user.designation,
+        dateOfJoining: user.dateOfJoining,
+        role: user.role,
+        roleDetails: user.roleMaster,
+        isActive: user.isActive,
+        yearsOfService: profileStats.yearsOfService
+      },
+      
+      // Hierarchy Information
+      hierarchyInfo: {
+        manager: user.hierarchyAsUser?.[0] ? {
+          hierarchyLevel: user.hierarchyAsUser[0].hierarchyLevel,
+          relationshipType: user.hierarchyAsUser[0].relationshipType,
+          managerDetails: user.hierarchyAsUser[0].parentUser,
+          effectiveFrom: user.hierarchyAsUser[0].effectiveFrom
+        } : null,
+        
+        directReports: user.hierarchyAsParent?.map(hierarchy => ({
+          userId: hierarchy.user.id,
+          name: `${hierarchy.user.firstName} ${hierarchy.user.lastName}`,
+          email: hierarchy.user.email,
+          designation: hierarchy.user.designation,
+          department: hierarchy.user.department,
+          hierarchyLevel: hierarchy.hierarchyLevel,
+          relationshipType: hierarchy.relationshipType,
+          effectiveFrom: hierarchy.effectiveFrom
+        })) || []
+      },
+      
+      // Management Information
+      managementInfo: {
+        managedClients: user.managedClients || [],
+        managedProjects: user.managedProjects || []
+      },
+      
+      // Statistics
+      statistics: profileStats,
+      
+      // Account Information
+      accountInfo: {
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        lastLogin: user.lastLoginAt || null // If you have this field
+      }
+    };
+
+    res.json({
+      success: true,
+      message: 'Profile retrieved successfully',
+      data: profileData
+    });
+  } catch (error) {
+    console.error('Get user profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching user profile'
+    });
+  }
+};
+
 // Get user statistics and dashboard data
 const getUserStats = async (req, res) => {
   try {
@@ -985,6 +1179,7 @@ const hierarchyValidation = [
 module.exports = {
   getAllUsers,
   getUserById,
+  getUserProfile,
   getTeamMembers,
   getTeamMembersByManagerId,
   createUser,

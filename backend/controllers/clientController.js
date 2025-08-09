@@ -104,13 +104,47 @@ const clientController = {
       });
 
       if (updatedRowsCount === 0) {
-        return res.status(404).json({ message: 'Client not found' });
+        return res.status(404).json({
+          success: false,
+          message: 'Client not found'
+        });
       }
 
-      res.json({ message: 'Client updated successfully' });
+      // Fetch the updated client with associations
+      const updatedClient = await Client.findByPk(id, {
+        include: [
+          {
+            model: User,
+            as: 'accountManager',
+            attributes: ['id', 'firstName', 'lastName', 'email']
+          },
+          {
+            model: User,
+            as: 'creator',
+            attributes: ['id', 'firstName', 'lastName', 'email']
+          },
+          {
+            model: Project,
+            as: 'projects',
+            where: { isActive: true },
+            required: false,
+            attributes: ['id', 'projectName', 'status', 'startDate', 'endDate']
+          }
+        ]
+      });
+
+      res.json({
+        success: true,
+        data: updatedClient,
+        message: 'Client updated successfully'
+      });
     } catch (error) {
       console.error('Error updating client:', error);
-      res.status(500).json({ message: 'Error updating client', error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Error updating client',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      });
     }
   },
 

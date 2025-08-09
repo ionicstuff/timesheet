@@ -217,3 +217,22 @@ code {
   background: rgba(255,255,255,.18);
   border: 1px solid rgba(255,255,255,.22);
 }
+
+/* Sidebar search placeholder visibility */
+.white-placeholder {
+  color: var(--text-primary);           /* typed text */
+  caret-color: var(--text-primary);
+}
+
+/* Dark default */
+.white-placeholder::placeholder { color: rgba(255,255,255,.70) !important; opacity: 1; }
+.white-placeholder::-webkit-input-placeholder { color: rgba(255,255,255,.70) !important; opacity: 1; }
+.white-placeholder::-moz-placeholder { color: rgba(255,255,255,.70) !important; opacity: 1; }
+.white-placeholder:-ms-input-placeholder { color: rgba(255,255,255,.70) !important; opacity: 1; }
+
+/* Light theme override */
+[data-theme="light"] .white-placeholder::placeholder { color: rgba(15,23,42,.55) !important; }
+[data-theme="light"] .white-placeholder::-webkit-input-placeholder { color: rgba(15,23,42,.55) !important; }
+[data-theme="light"] .white-placeholder::-moz-placeholder { color: rgba(15,23,42,.55) !important; }
+[data-theme="light"] .white-placeholder:-ms-input-placeholder { color: rgba(15,23,42,.55) !important; }
+

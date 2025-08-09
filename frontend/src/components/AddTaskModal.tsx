@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import TaskService, { CreateTaskData } from '../services/task.service';
 import ProjectService from '../services/project.service';
 
@@ -17,14 +18,15 @@ interface AddTaskModalProps {
   onHide: () => void;
   projectId: number;
   onTaskCreated: () => void;
+  preselectedAssigneeId?: number; // optional: preselect an assignee
 }
 
-const AddTaskModal: React.FC<AddTaskModalProps> = ({ show, onHide, projectId, onTaskCreated }) => {
+const AddTaskModal: React.FC<AddTaskModalProps> = ({ show, onHide, projectId, onTaskCreated, preselectedAssigneeId }) => {
   const [formData, setFormData] = useState<CreateTaskData>({
     projectId,
     name: '',
     description: '',
-    assignedTo: undefined,
+    assignedTo: preselectedAssigneeId,
     estimatedTime: 0
   });
   const [users, setUsers] = useState<User[]>([]);
@@ -34,9 +36,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ show, onHide, projectId, on
   useEffect(() => {
     if (show) {
       fetchUsers();
-      setFormData(prev => ({ ...prev, projectId }));
+      setFormData(prev => ({ ...prev, projectId, assignedTo: preselectedAssigneeId }));
     }
-  }, [show, projectId]);
+  }, [show, projectId, preselectedAssigneeId]);
 
   const fetchUsers = async () => {
     try {
@@ -77,7 +79,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ show, onHide, projectId, on
         projectId,
         name: '',
         description: '',
-        assignedTo: undefined,
+        assignedTo: preselectedAssigneeId,
         estimatedTime: 0
       });
       
@@ -90,17 +92,40 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ show, onHide, projectId, on
     }
   };
 
+  // Lock body scroll while modal is open (must be declared before any early returns)
+  useEffect(() => {
+    if (!show) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [show]);
+
   if (!show) return null;
 
-  return (
-    <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="modal-dialog modal-lg">
+  const modalNode = (
+    <div
+      className="fade show"
+      aria-modal="true"
+      role="dialog"
+      tabIndex={-1}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.5)',
+        zIndex: 2000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+      onClick={onHide}
+    >
+      <div className="modal-dialog modal-lg" style={{ maxWidth: 900 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">Add New Task</h5>
             <button type="button" className="btn-close" onClick={onHide}></button>
           </div>
-          
+
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
               {error && (
@@ -108,7 +133,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ show, onHide, projectId, on
                   {error}
                 </div>
               )}
-              
+
               <div className="mb-3">
                 <label htmlFor="taskName" className="form-label">Task Name *</label>
                 <input
@@ -199,6 +224,8 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ show, onHide, projectId, on
       </div>
     </div>
   );
+
+  return createPortal(modalNode, document.body);
 };
 
 export default AddTaskModal;

@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   getAllUsers,
   getUserById,
+  getUserProfile,
   getTeamMembers,
   getTeamMembersByManagerId,
   createUser,
@@ -37,6 +38,13 @@ router.get('/',
 router.get('/stats', 
   authorizeRoles(['admin', 'hr', 'manager']), 
   getUserStats
+);
+
+// @route   GET /api/users/profile
+// @desc    Get current user's complete profile information
+// @access  Private (All authenticated users)
+router.get('/profile', 
+  getUserProfile
 );
 
 // @route   GET /api/users/team

@@ -21,4 +21,7 @@ router.get('/:id', clientController.getClientById);
 // POST /api/clients - Create a new client
 router.post('/', clientController.createClient);
 
+// PUT /api/clients/:id - Update a client
+router.put('/:id', clientController.updateClient);
+
 module.exports = router;

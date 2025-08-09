@@ -102,6 +102,29 @@ export interface CreateClientRequest {
   spocEmail?: string; // Added SPOC email field
 }
 
+export interface UpdateClientRequest {
+  clientCode?: string;
+  clientName?: string;
+  companyName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+  website?: string;
+  industry?: string;
+  accountManagerId?: number;
+  contractStartDate?: string;
+  contractEndDate?: string;
+  status?: 'active' | 'inactive' | 'prospect' | 'closed';
+  billingType?: 'hourly' | 'fixed' | 'monthly' | 'project';
+  hourlyRate?: number;
+  currency?: string;
+  notes?: string;
+}
+
 class ClientService {
   // Get clients for the current user
   async getUserClients(filters?: { search?: string; industry?: string; status?: string }): Promise<Client[]> {
@@ -148,6 +171,17 @@ class ClientService {
       return response.data.data;
     } catch (error) {
       console.error('Error creating client:', error);
+      throw error;
+    }
+  }
+
+  // Update a client
+  async updateClient(id: number, clientData: UpdateClientRequest): Promise<Client> {
+    try {
+      const response = await api.put(`/clients/${id}`, clientData);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error updating client:', error);
       throw error;
     }
   }

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import Toast from './Toast';
 import TimesheetService, { TimesheetStatus } from '../services/timesheet.service';
 import Clients from './Clients';
 import OnboardClient from './OnboardClient';
 import ProjectsContent from './ProjectsContent';
+import Profile from './Profile';
 
 const Dashboard: React.FC = () => {
   // Apply dark theme styles
@@ -53,7 +55,7 @@ const Dashboard: React.FC = () => {
   }>({ message: '', type: 'info', isVisible: false });
 
   // View state management
-  const [currentView, setCurrentView] = useState<'dashboard' | 'clients' | 'onboardClient' | 'projects'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'profile' | 'clients' | 'onboardClient' | 'projects'>('dashboard');
   
   // Theme state
   const [isDarkTheme, setIsDarkTheme] = useState(true);
@@ -79,6 +81,30 @@ const Dashboard: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showDropdown]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (!showLogoutModal) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [showLogoutModal]);
+
+  // Handle ESC key for modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showLogoutModal) {
+        handleLogoutCancel();
+      }
+    };
+
+    if (showLogoutModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showLogoutModal]);
 
   // Theme toggle
   useEffect(() => {
@@ -311,10 +337,15 @@ const Dashboard: React.FC = () => {
             </li>
             <li className="nav-item mb-1">
               <a className="nav-link d-flex align-items-center py-3 px-3 rounded"
-                style={{ transition: 'all 0.3s ease', color: 'var(--text-primary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--border-color)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                href="#">
+                style={{
+                  backgroundColor: currentView === 'profile' ? 'var(--border-color)' : 'transparent',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer',
+                  color: 'var(--text-primary)'
+                }}
+                onMouseEnter={(e) => currentView !== 'profile' && (e.currentTarget.style.backgroundColor = 'var(--border-color)')}
+                onMouseLeave={(e) => currentView !== 'profile' && (e.currentTarget.style.backgroundColor = 'transparent')}
+                onClick={() => setCurrentView('profile')}>
                 <i className="fas fa-user me-3" style={{ width: '20px', color: 'var(--text-primary)' }}></i>
                 <span>My Profile</span>
               </a>
@@ -426,6 +457,7 @@ const Dashboard: React.FC = () => {
             <div className="d-flex align-items-center">
               <h4 className="h4 mb-0">{
                 currentView === 'dashboard' ? 'Dashboard' :
+                currentView === 'profile' ? 'My Profile' :
                 currentView === 'clients' ? 'Client Management' :
                 currentView === 'onboardClient' ? 'Client Onboarding' :
                 currentView === 'projects' ? 'Project Management' : 'Dashboard'
@@ -820,6 +852,9 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
           </div>
+        ) : currentView === 'profile' ? (
+          // Profile View
+          <Profile />
         ) : currentView === 'clients' ? (
           // Clients View
           <Clients onNavigateToOnboard={() => setCurrentView('onboardClient')} />
@@ -832,55 +867,107 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Logout Confirmation Modal */}
-      {showLogoutModal && (
-        <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-sm modal-dialog-centered">
-            <div className="modal-content border-0 shadow">
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold" style={{ color: colorTheme.primary }}>
-                  <i className="fas fa-sign-out-alt me-2"></i>
-                  Confirm Logout
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={handleLogoutCancel}
-                  disabled={isLoggingOut}
-                ></button>
+      {showLogoutModal && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1050,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16
+          }}
+          onClick={handleLogoutCancel}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            style={{
+              background: 'var(--card-bg, #fff)',
+              color: 'var(--text-primary, #000)',
+              border: '1px solid var(--border-color, #ddd)',
+              borderRadius: 12,
+              width: 'min(400px, 95%)',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.35)',
+              outline: 'none',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header border-0 pb-0">
+              <div className="w-100 text-center">
+                <i className="fas fa-sign-out-alt" style={{ fontSize: '2.5rem', color: colorTheme.primary, marginBottom: '1rem' }}></i>
+                <h4 className="modal-title" style={{ color: colorTheme.primary, fontWeight: 'bold' }}>Confirm Logout</h4>
+                <p className="text-muted mb-0">Are you sure you want to sign out?</p>
               </div>
-              <div className="modal-body pt-2">
-                <p className="mb-0 text-muted">
-                  Are you sure you want to log out? You will need to sign in again to access your account.
+              <button
+                type="button"
+                className="btn-close"
+                onClick={handleLogoutCancel}
+                disabled={isLoggingOut}
+                aria-label="Close"
+              ></button>
+            </div>
+
+            <div className="modal-body pt-3">
+              <div className="text-center">
+                <p className="text-muted mb-4">
+                  You will need to sign in again to access your account.
                 </p>
+                
+                <div className="d-grid gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={handleLogoutConfirm}
+                    disabled={isLoggingOut}
+                    style={{
+                      padding: '0.75rem',
+                      fontSize: '0.95rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    {isLoggingOut ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Logging out...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-sign-out-alt me-2"></i>
+                        Yes, Logout
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={handleLogoutCancel}
+                    disabled={isLoggingOut}
+                  >
+                    <i className="fas fa-times me-2"></i>
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <div className="modal-footer border-0 pt-0">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleLogoutCancel}
-                  disabled={isLoggingOut}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={handleLogoutConfirm}
-                  disabled={isLoggingOut}
-                >
-                  {isLoggingOut ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Logging out...
-                    </>
-                  ) : (
-                    'Logout'
-                  )}
-                </button>
+            </div>
+
+            <div className="modal-footer border-0 pt-0">
+              <div className="w-100 text-center">
+                <small className="text-muted">
+                  <i className="fas fa-shield-alt me-1"></i>
+                  Your session will be securely terminated.
+                </small>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Toast Notification */}

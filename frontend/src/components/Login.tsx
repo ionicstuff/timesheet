@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login: React.FC = () => {
@@ -103,6 +104,30 @@ const Login: React.FC = () => {
     setForgotPasswordError('');
     setForgotPasswordMessage('');
   };
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (!showForgotPassword) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [showForgotPassword]);
+
+  // Handle ESC key for modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showForgotPassword) {
+        closeForgotPasswordModal();
+      }
+    };
+
+    if (showForgotPassword) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showForgotPassword]);
 
   return (
     <div className="container-fluid" style={{ minHeight: '100vh' }}>
@@ -313,124 +338,155 @@ const Login: React.FC = () => {
         </div>
       </div>
       
-      {/* Forgot Password Modal */}
-      {showForgotPassword && (
-        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header border-0 pb-0">
-                <div className="w-100 text-center">
-                  <i className="fas fa-key" style={{ fontSize: '2.5rem', color: '#273C63', marginBottom: '1rem' }}></i>
-                  <h4 className="modal-title" style={{ color: '#273C63', fontWeight: 'bold' }}>Reset Password</h4>
-                  <p className="text-muted mb-0">Enter your email to receive reset instructions</p>
-                </div>
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={closeForgotPasswordModal}
-                  aria-label="Close"
-                ></button>
-              </div>
-              
-              <div className="modal-body pt-3">
-                {forgotPasswordMessage && (
-                  <div className="alert alert-success" role="alert">
-                    <i className="fas fa-check-circle me-2"></i>
-                    {forgotPasswordMessage}
-                  </div>
-                )}
-                
-                {forgotPasswordError && (
-                  <div className="alert alert-danger" role="alert">
-                    <i className="fas fa-exclamation-circle me-2"></i>
-                    {forgotPasswordError}
-                  </div>
-                )}
-                
-                {!forgotPasswordMessage && (
-                  <form onSubmit={handleForgotPassword}>
-                    <div className="mb-3">
-                      <label htmlFor="forgotPasswordEmail" className="form-label">
-                        <i className="fas fa-envelope me-2"></i>Email Address
-                      </label>
-                      <input
-                        type="email"
-                        className="form-control"
-                        id="forgotPasswordEmail"
-                        placeholder="Enter your registered email address"
-                        value={forgotPasswordEmail}
-                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                        required
-                        autoFocus
-                        style={{ fontSize: '0.95rem', padding: '0.75rem' }}
-                      />
-                    </div>
-                    
-                    <div className="d-grid gap-2">
-                      <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={forgotPasswordLoading}
-                        style={{ 
-                          backgroundColor: '#dc3545', 
-                          borderColor: '#dc3545',
-                          padding: '0.75rem',
-                          fontSize: '0.95rem',
-                          fontWeight: '500'
-                        }}
-                      >
-                        {forgotPasswordLoading ? (
-                          <>
-                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                            Sending Reset Link...
-                          </>
-                        ) : (
-                          <>
-                            <i className="fas fa-paper-plane me-2"></i>
-                            Send Reset Link
-                          </>
-                        )}
-                      </button>
-                      
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary"
-                        onClick={closeForgotPasswordModal}
-                        disabled={forgotPasswordLoading}
-                      >
-                        <i className="fas fa-times me-2"></i>
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                )}
-                
-                {forgotPasswordMessage && (
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      className="btn btn-outline-primary"
-                      onClick={closeForgotPasswordModal}
-                    >
-                      <i className="fas fa-check me-2"></i>
-                      Close
-                    </button>
-                  </div>
-                )}
-              </div>
-              
-              <div className="modal-footer border-0 pt-0">
-                <div className="w-100 text-center">
-                  <small className="text-muted">
-                    <i className="fas fa-info-circle me-1"></i>
-                    You will receive an email with password reset instructions if an account with this email exists.
-                  </small>
-                </div>
-              </div>
-            </div>
-          </div>
+     {/* Forgot Password Modal */}
+{showForgotPassword && createPortal(
+  <div
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0, 0, 0, 0.5)',
+      zIndex: 1050,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16
+    }}
+    onClick={closeForgotPasswordModal}
+    role="dialog"
+    aria-modal="true"
+  >
+    <div
+      style={{
+        background: '#fff',
+        color: '#000',
+        border: '1px solid #ddd',
+        borderRadius: 12,
+        width: 'min(500px, 95%)',
+        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.35)',
+        outline: 'none',
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="modal-header border-0 pb-0">
+        <div className="w-100 text-center">
+          <i className="fas fa-key" style={{ fontSize: '2.5rem', color: '#273C63', marginBottom: '1rem' }}></i>
+          <h4 className="modal-title" style={{ color: '#273C63', fontWeight: 'bold' }}>Reset Password</h4>
+          <p className="text-muted mb-0">Enter your email to receive reset instructions</p>
         </div>
-      )}
+        <button
+          type="button"
+          className="btn-close"
+          onClick={closeForgotPasswordModal}
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div className="modal-body" style={{ padding: '16px 18px 6px' }}>
+  {forgotPasswordMessage && (
+    <div className="alert alert-success" role="alert">
+      <i className="fas fa-check-circle me-2"></i>
+      {forgotPasswordMessage}
+    </div>
+  )}
+
+        {forgotPasswordError && (
+    <div className="alert alert-danger" role="alert">
+      <i className="fas fa-exclamation-circle me-2"></i>
+      {forgotPasswordError}
+    </div>
+  )}
+
+
+        {!forgotPasswordMessage && (
+    <form onSubmit={handleForgotPassword}>
+      <div className="mb-3">
+        <label htmlFor="forgotPasswordEmail" className="form-label" style={{ fontWeight: 600, color: '#495057' }}>
+          Email Address
+        </label>
+
+        <div className="input-group">
+          <span className="input-group-text" style={{ background: '#f6f7fb', border: '1px solid #e5e7eb' }}>
+            <i className="fas fa-envelope" style={{ color: '#6b7280', fontSize: '0.9rem' }}></i>
+          </span>
+          <input
+            type="email"
+            className="form-control"
+            id="forgotPasswordEmail"
+            placeholder="Enter your registered email address"
+            value={forgotPasswordEmail}
+            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+            required
+            autoFocus
+            style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+          />
+        </div>
+      </div>
+
+            <div className="d-grid gap-2">
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={forgotPasswordLoading}
+          style={{
+            backgroundColor: '#dc3545',
+            borderColor: '#dc3545',
+            padding: '0.75rem',
+            fontSize: '0.95rem',
+            fontWeight: 500
+          }}
+        >
+                {forgotPasswordLoading ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Sending Reset Link...
+            </>
+          ) : (
+            <>
+              <i className="fas fa-paper-plane me-2"></i>
+              Send Reset Link
+            </>
+          )}
+        </button>
+
+              <button
+          type="button"
+          className="btn btn-outline-secondary"
+          onClick={closeForgotPasswordModal}
+          disabled={forgotPasswordLoading}
+        >
+          <i className="fas fa-times me-2"></i>
+          Cancel
+        </button>
+      </div>
+    </form>
+  )}
+
+        {forgotPasswordMessage && (
+    <div className="text-center">
+      <button type="button" className="btn btn-outline-primary" onClick={closeForgotPasswordModal}>
+        <i className="fas fa-check me-2"></i>
+        Close
+      </button>
+    </div>
+  )}
+</div>
+
+      <div className="modal-footer border-0 pt-0">
+        <div className="w-100 text-center">
+          <small className="text-muted">
+            <i className="fas fa-info-circle me-1"></i>
+            You will receive an email with password reset instructions if an account with this email exists.
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>,
+  document.body
+)}
+
     </div>
   );
 };
