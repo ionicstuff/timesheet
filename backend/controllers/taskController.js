@@ -25,7 +25,7 @@ const getTasks = async (req, res) => {
           attributes: ['id', 'firstName', 'lastName', 'email']
         }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
     res.json(tasks);
   } catch (error) {
@@ -47,7 +47,7 @@ const getTasksByProject = async (req, res) => {
           attributes: ['id', 'firstName', 'lastName', 'email']
         }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
     res.json(tasks);
   } catch (error) {
@@ -204,7 +204,7 @@ const getMyTasks = async (req, res) => {
           attributes: ['id', 'projectName', 'projectCode']
         }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
     res.json(tasks);
   } catch (error) {

@@ -1,16 +1,18 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Login from './components/Login';
-import ResetPassword from './components/ResetPassword';
-import Dashboard from './components/Dashboard';
-import ProjectDetails from './components/ProjectDetails';
-import ProjectView from './components/ProjectView';
-import Projects from './components/Projects';
-import AdminLogin from './admin/components/AdminLogin';
-import AdminDashboard from './admin/components/AdminDashboard';
-import './App.css';
-import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import React from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Login from "./components/Login";
+import ResetPassword from "./components/ResetPassword";
+import Dashboard from "./components/Dashboard";
+import ProjectDetails from "./components/ProjectDetails";
+import ProjectView from "./components/ProjectView";
+import Projects from "./components/Projects";
+import AdminLogin from "./admin/components/AdminLogin";
+import AdminDashboard from "./admin/components/AdminDashboard";
+import "./App.css";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+import TimesheetView from "./components/timesheet/TimesheetView";
 
 function App() {
   return (
@@ -46,6 +48,14 @@ function App() {
               }
             />
             <Route
+        path="/timesheet/view"
+        element={
+          <ProtectedRoute>
+            <TimesheetView />
+          </ProtectedRoute>
+        }
+      />
+            <Route
               path="/projects"
               element={
                 <ProtectedRoute>
@@ -59,6 +69,7 @@ function App() {
           </Routes>
         </div>
       </Router>
+      
     </AuthProvider>
   );
 }

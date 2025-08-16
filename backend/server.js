@@ -5,6 +5,8 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+const timesheetEntryRoutes = require('./routes/timesheetEntryRoutes');
+
 const sequelize = require('./config/database');
 
 const app = express();
@@ -58,6 +60,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/timesheet', require('./routes/timesheet'));
+app.use('/api/timesheet-entries', timesheetEntryRoutes);
 app.use('/api/clients', require('./routes/clients'));
 app.use('/api/projects', require('./routes/projectRoutes'));
 app.use('/api/client-management', require('./routes/clientRoutes'));

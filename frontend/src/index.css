@@ -234,5 +234,38 @@ code {
 [data-theme="light"] .white-placeholder::placeholder { color: rgba(15,23,42,.55) !important; }
 [data-theme="light"] .white-placeholder::-webkit-input-placeholder { color: rgba(15,23,42,.55) !important; }
 [data-theme="light"] .white-placeholder::-moz-placeholder { color: rgba(15,23,42,.55) !important; }
-[data-theme="light"] .white-placeholder:-ms-input-placeholder { color: rgba(15,23,42,.55) !important; }
+[data-theme="light"] .white-placeholder::-ms-input-placeholder { color: rgba(15,23,42,.55) !important; }
+
+/* Form select/dropdown theming: ensure readable text in both themes */
+select, .form-select {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  color-scheme: dark; /* prefer dark UI for native parts in dark theme */
+}
+
+/* Options must be explicitly colored for some browsers */
+select option, select optgroup {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Selected option highlight should still be readable */
+select option:checked {
+  color: var(--text-primary) !important;
+}
+
+/* Light theme overrides */
+[data-theme="light"] select,
+[data-theme="light"] .form-select {
+  background-color: #ffffff !important;
+  color: #0f172a !important; /* matches --text-primary in light */
+  border-color: var(--border-color) !important;
+  color-scheme: light; /* force light native UI in light theme */
+}
+[data-theme="light"] select option,
+[data-theme="light"] select optgroup {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
 

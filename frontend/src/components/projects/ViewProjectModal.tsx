@@ -39,7 +39,29 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ project, isOpen, on
   const [loadingTeam, setLoadingTeam] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
   const [preselectedAssigneeId, setPreselectedAssigneeId] = useState<number | undefined>(undefined);
+  const [details, setDetails] = useState<Project | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
+  // Load full project details (with tasks, members, docs) when modal opens
+  useEffect(() => {
+    const loadDetails = async () => {
+      if (!isOpen || !project?.id) return;
+      try {
+        setLoadingDetails(true);
+        const full = await ProjectService.getProject(project.id);
+        setDetails(full);
+      } catch (e) {
+        console.error('Failed to load project details', e);
+        // fall back to passed-in project
+        setDetails(project);
+      } finally {
+        setLoadingDetails(false);
+      }
+    };
+    loadDetails();
+  }, [isOpen, project?.id]);
+
+  // Load team picker data
   useEffect(() => {
     const loadTeam = async () => {
       if (!isOpen) return;
@@ -69,14 +91,15 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ project, isOpen, on
 
   if (!isOpen || !project) return null;
 
-  const status = (project.status || (project.isActive ? 'active' : 'archived')).toString();
+  const view = details || project;
+  const status = (view.status || (view.isActive ? 'active' : 'archived')).toString();
   const statusLabel = status.replace('in_progress', 'in progress').replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
-  const created = new Date((project as any).createdAt || (project as any).created_at || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  const created = new Date((view as any).createdAt || (view as any).created_at || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
-  const members = project.teamMembers || [];
-  const tasks = (project as any).tasks as any[] | string[] | undefined;
-  const attachments = project.attachments || (project as any).documents || [];
-  const tags = project.tags || [];
+  const members = view.teamMembers || [];
+  const tasks = (view as any).tasks as any[] | string[] | undefined;
+  const attachments = view.attachments || (view as any).documents || [];
+  const tags = view.tags || [];
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Project Details`} size="lg">
@@ -84,8 +107,8 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ project, isOpen, on
         {/* Header summary */}
         <div className="d-flex justify-content-between align-items-start mb-2">
           <div>
-            <h5 className="mb-1" style={{ color: 'var(--text-primary)' }}>{project.name}</h5>
-            <div className="text-muted" style={{ fontSize: 12 }}>Code: <strong>{project.projectCode || '—'}</strong></div>
+            <h5 className="mb-1" style={{ color: 'var(--text-primary)' }}>{view.name}</h5>
+            <div className="text-muted" style={{ fontSize: 12 }}>Code: <strong>{view.projectCode || '—'}</strong></div>
           </div>
           <div className="d-flex flex-wrap gap-2" style={{ gap: 8 }}>
             <Chip><i className="fas fa-clipboard-list" /> {Array.isArray(tasks) ? tasks.length : 0} Tasks</Chip>
@@ -99,26 +122,26 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ project, isOpen, on
         <div className="row g-3">
           <div className="col-md-6">
             <SectionTitle icon="fas fa-info-circle" title="Overview" />
-            <div className="mb-2"><strong>Client:</strong> <span className="text-muted">{project.client?.name || '—'}</span></div>
+            <div className="mb-2"><strong>Client:</strong> <span className="text-muted">{view.client?.name || '—'}</span></div>
             <div className="mb-2"><strong>Created:</strong> <span className="text-muted">{created}</span></div>
-            {project.endDate && (
-              <div className="mb-2"><strong>Delivery Date:</strong> <span className="text-muted">{project.endDate}</span></div>
+            {view.endDate && (
+              <div className="mb-2"><strong>Delivery Date:</strong> <span className="text-muted">{view.endDate}</span></div>
             )}
-            {project.briefReceivedOn && (
-              <div className="mb-2"><strong>Brief Received:</strong> <span className="text-muted">{project.briefReceivedOn}</span></div>
+            {view.briefReceivedOn && (
+              <div className="mb-2"><strong>Brief Received:</strong> <span className="text-muted">{view.briefReceivedOn}</span></div>
             )}
-            {typeof project.estimatedTime !== 'undefined' && (
-              <div className="mb-2"><strong>Est. Time:</strong> <span className="text-muted">{project.estimatedTime} hrs</span></div>
+            {typeof view.estimatedTime !== 'undefined' && (
+              <div className="mb-2"><strong>Est. Time:</strong> <span className="text-muted">{view.estimatedTime} hrs</span></div>
             )}
-            {project.manager && (
-              <div className="mb-2"><strong>Manager:</strong> <span className="text-muted">{project.manager.firstName} {project.manager.lastName}</span></div>
+            {view.manager && (
+              <div className="mb-2"><strong>Manager:</strong> <span className="text-muted">{view.manager.firstName} {view.manager.lastName}</span></div>
             )}
           </div>
 
           <div className="col-md-6">
             <SectionTitle icon="fas fa-align-left" title="Description" />
             <div className="text-muted" style={{ whiteSpace: 'pre-wrap', fontSize: 13 }}>
-              {project.description || '—'}
+              {view.description || '—'}
             </div>
           </div>
         </div>
@@ -222,8 +245,16 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ project, isOpen, on
       <AddTaskModal
         show={showAddTask}
         onHide={() => setShowAddTask(false)}
-        projectId={project.id}
-        onTaskCreated={() => { /* Optionally refresh project details upstream */ }}
+        projectId={(details || project).id}
+        onTaskCreated={async () => {
+          // Refresh details so new task appears immediately
+          try {
+            const full = await ProjectService.getProject((details || project).id);
+            setDetails(full);
+          } catch (e) {
+            console.error('Failed to refresh project details after task creation', e);
+          }
+        }}
         preselectedAssigneeId={preselectedAssigneeId}
       />
     </Modal>

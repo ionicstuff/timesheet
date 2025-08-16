@@ -10,6 +10,12 @@ const Project = require('./Project');
 const Spoc = require('./Spoc');
 const Task = require('./Task');
 
+const TimesheetEntry = require('./TimesheetEntry');
+Timesheet.hasMany(TimesheetEntry, { foreignKey: 'timesheetId', as: 'entries' });
+TimesheetEntry.belongsTo(Timesheet, { foreignKey: 'timesheetId', as: 'timesheet' });
+TimesheetEntry.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+TimesheetEntry.belongsTo(Task, { foreignKey: 'taskId', as: 'task' });
+
 // User and RoleMaster associations
 User.belongsTo(RoleMaster, {
   foreignKey: 'roleId',
@@ -211,5 +217,6 @@ module.exports = {
   Client,
   Project,
   Spoc,
-  Task
+  Task,
+  TimesheetEntry
 };
