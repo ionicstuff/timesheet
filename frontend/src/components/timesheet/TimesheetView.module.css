@@ -1,0 +1,34 @@
+.pageWrap {
+  padding: 1.25rem;
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.title {
+  margin: 0;
+}
+
+.subtle {
+  font-size: 0.875rem;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+}
+
+.truncate {
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
