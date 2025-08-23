@@ -17,6 +17,8 @@ router.put('/:id', projectController.updateProject);
 router.put('/:id/details', projectController.updateProjectDetails);
 router.post('/:id/upload', projectController.uploadProjectFiles);
 router.get('/:id/files', projectController.getProjectFiles);
+// Only allow Account Manager or Project Manager to close a project
+router.post('/:id/close', authorizeRoles('Account Manager', 'Project Manager'), projectController.closeProject);
 router.delete('/:id', projectController.deleteProject);
 
 module.exports = router;

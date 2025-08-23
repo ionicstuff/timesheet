@@ -168,6 +168,26 @@ const Project = sequelize.define('Project', {
       model: 'users',
       key: 'id'
     }
+  },
+  // Closing metadata
+  closedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'closed_at'
+  },
+  closedByUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'closed_by_user_id',
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  closedReason: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'closed_reason'
   }
 }, {
   tableName: 'projects',
@@ -199,6 +219,9 @@ const Project = sequelize.define('Project', {
     },
     {
       fields: ['is_active']
+    },
+    {
+      fields: ['closed_at']
     }
   ]
 });

@@ -63,12 +63,12 @@ const Task = sequelize.define('Task', {
     comment: 'Estimated time in hours'
   },
   status: {
-    type: DataTypes.ENUM('pending', 'in_progress', 'completed', 'cancelled'),
+    type: DataTypes.ENUM('pending', 'in_progress', 'paused', 'completed', 'cancelled'),
     defaultValue: 'pending',
     validate: {
       isIn: {
-        args: [['pending', 'in_progress', 'completed', 'cancelled']],
-        msg: 'Status must be one of: pending, in_progress, completed, cancelled'
+        args: [['pending', 'in_progress', 'paused', 'completed', 'cancelled']],
+        msg: 'Status must be one of: pending, in_progress, paused, completed, cancelled'
       }
     }
   },
@@ -92,6 +92,36 @@ const Task = sequelize.define('Task', {
     type: DataTypes.TEXT,
     allowNull: true,
     field: 'rejection_reason'
+  },
+  // Time tracking fields
+  startedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'started_at'
+  },
+  completedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'completed_at'
+  },
+  totalTrackedSeconds: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'total_tracked_seconds',
+    validate: {
+      min: 0
+    }
+  },
+  activeTimerStartedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'active_timer_started_at'
+  },
+  lastPausedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'last_paused_at'
   }
 }, {
   tableName: 'tasks',
@@ -111,6 +141,9 @@ const Task = sequelize.define('Task', {
     },
     {
       fields: ['project_id', 'status']
+    },
+    {
+      fields: ['assigned_to', 'active_timer_started_at']
     }
   ]
 });

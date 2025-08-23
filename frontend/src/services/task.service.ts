@@ -44,10 +44,15 @@ export interface Task {
   description?: string;
   assignedTo?: number;
   estimatedTime: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'in_progress' | 'paused' | 'completed' | 'cancelled';
   acceptanceStatus?: 'pending' | 'accepted' | 'rejected';
   acceptedAt?: string;
   rejectionReason?: string;
+  startedAt?: string;
+  completedAt?: string;
+  totalTrackedSeconds?: number;
+  activeTimerStartedAt?: string;
+  lastPausedAt?: string;
   createdAt?: string;
   updatedAt?: string;
   project?: {
@@ -80,6 +85,32 @@ export interface UpdateTaskData {
 }
 
 class TaskService {
+  // Timer endpoints
+  async start(id: number, note?: string): Promise<{ message: string; task: Task }> {
+    const response = await api.post(`/tasks/${id}/start`, note ? { note } : {});
+    return response.data;
+  }
+  async pause(id: number, note?: string): Promise<{ message: string; task: Task }> {
+    const response = await api.post(`/tasks/${id}/pause`, note ? { note } : {});
+    return response.data;
+  }
+  async resume(id: number, note?: string): Promise<{ message: string; task: Task }> {
+    const response = await api.post(`/tasks/${id}/resume`, note ? { note } : {});
+    return response.data;
+  }
+  async stop(id: number, note?: string): Promise<{ message: string; task: Task }> {
+    const response = await api.post(`/tasks/${id}/stop`, note ? { note } : {});
+    return response.data;
+  }
+  async complete(id: number, note?: string): Promise<{ message: string; task: Task }> {
+    const response = await api.post(`/tasks/${id}/complete`, note ? { note } : {});
+    return response.data;
+  }
+  async getLogs(id: number) {
+    const response = await api.get(`/tasks/${id}/logs`);
+    return response.data;
+  }
+
   async getTasks(filters?: {
     projectId?: number;
     assignedTo?: number;

@@ -33,13 +33,27 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, isOpen, on
     setLoading(true);
     setError(null);
     try {
-      // Map status -> isActive if applicable
-      const payload: any = { name, description, status };
-      await ProjectService.updateProject(project.id, payload);
-      onProjectUpdated({ ...project, name, description, status } as Project);
+      // Backend updateProject requires clientId/managerId/dates/isActive as well.
+      const isActive = status !== 'archived' && status !== 'blocked' ? true : project.isActive ?? true;
+      const updateBasic: any = {
+        name,
+        description,
+        clientId: project.client?.id ?? null,
+        managerId: (project as any).manager?.id ?? null,
+        startDate: (project as any).startDate ?? null,
+        endDate: (project as any).endDate ?? null,
+        isActive
+      };
+      await ProjectService.updateProject(project.id, updateBasic);
+
+      // Update status via details endpoint (since base update does not handle status)
+      await ProjectService.updateProjectDetails(project.id, { status });
+
+      onProjectUpdated({ ...project, name, description, status, isActive } as Project);
       onClose();
     } catch (err: any) {
-      setError(err?.message || 'Failed to update project');
+      const msg = err?.response?.data?.message || err?.message || 'Failed to update project';
+      setError(msg);
     } finally {
       setLoading(false);
     }

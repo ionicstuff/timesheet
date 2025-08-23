@@ -14,6 +14,15 @@ router.post('/', taskController.createTask);
 router.get('/project/:projectId', taskController.getTasksByProject);
 router.put('/:id/accept', taskController.acceptTask);
 router.put('/:id/reject', taskController.rejectTask);
+
+// Timer action routes
+router.post('/:id/start', taskController.startTask);
+router.post('/:id/pause', taskController.pauseTask);
+router.post('/:id/resume', taskController.resumeTask);
+router.post('/:id/stop', taskController.stopTask);
+router.post('/:id/complete', taskController.completeTask);
+router.get('/:id/logs', taskController.getTaskTimeLogs);
+
 router.get('/:id', taskController.getTask);
 router.put('/:id', taskController.updateTask);
 router.delete('/:id', taskController.deleteTask);

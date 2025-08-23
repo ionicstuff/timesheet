@@ -213,6 +213,69 @@ const getMyTasks = async (req, res) => {
   }
 };
 
+// Get time logs for a task
+const getTaskTimeLogs = async (req, res) => {
+  try {
+    const TaskTimeLog = require('../models/TaskTimeLog');
+    const { id } = req.params;
+    const logs = await TaskTimeLog.findAll({
+      where: { taskId: id },
+      order: [['created_at', 'ASC']]
+    });
+    res.json(logs);
+  } catch (error) {
+    console.error('Error fetching task time logs:', error);
+    res.status(500).json({ message: 'Error fetching task time logs', error: error.message });
+  }
+};
+
+const TaskTimerService = require('../services/TaskTimerService');
+
+const startTask = async (req, res) => {
+  try {
+    const task = await TaskTimerService.start(req.params.id, req.user, req.body?.note || null);
+    res.json({ message: 'Task started', task });
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
+const pauseTask = async (req, res) => {
+  try {
+    const task = await TaskTimerService.pause(req.params.id, req.user, req.body?.note || null);
+    res.json({ message: 'Task paused', task });
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
+const resumeTask = async (req, res) => {
+  try {
+    const task = await TaskTimerService.resume(req.params.id, req.user, req.body?.note || null);
+    res.json({ message: 'Task resumed', task });
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
+const stopTask = async (req, res) => {
+  try {
+    const task = await TaskTimerService.stop(req.params.id, req.user, req.body?.note || null);
+    res.json({ message: 'Task stopped', task });
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
+const completeTask = async (req, res) => {
+  try {
+    const task = await TaskTimerService.complete(req.params.id, req.user, req.body?.note || null);
+    res.json({ message: 'Task completed', task });
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
 module.exports = {
   getTasks,
   getTasksByProject,
@@ -222,6 +285,12 @@ module.exports = {
   deleteTask,
   acceptTask,
   rejectTask,
-  getMyTasks
+  getMyTasks,
+  startTask,
+  pauseTask,
+  resumeTask,
+  stopTask,
+  completeTask,
+  getTaskTimeLogs
 };
 

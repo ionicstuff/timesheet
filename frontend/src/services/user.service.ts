@@ -274,6 +274,28 @@ class UserService {
   getStatusText(isActive: boolean): string {
     return isActive ? 'Active' : 'Inactive';
   }
+
+  // Search users globally (lightweight lookup)
+  async searchUsers(params: { q: string; limit?: number; page?: number }): Promise<TeamMember[]> {
+    const query = new URLSearchParams();
+    query.append('q', params.q);
+    if (params.limit) query.append('limit', String(params.limit));
+    if (params.page) query.append('page', String(params.page));
+
+    const resp = await api.get(`/users/search?${query.toString()}`);
+    const arr = resp.data?.data || resp.data || [];
+    return Array.isArray(arr)
+      ? arr.map((u: any) => ({
+          id: u.id,
+          firstName: u.firstName || u.firstname || '',
+          lastName: u.lastName || u.lastname || '',
+          email: u.email,
+          department: u.department,
+          designation: u.designation,
+          profilePicture: u.profilePicture,
+        }))
+      : [];
+  }
 }
 
 export default new UserService();

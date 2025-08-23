@@ -6,6 +6,7 @@ import Dashboard from "./components/Dashboard";
 import ProjectDetails from "./components/ProjectDetails";
 import ProjectView from "./components/ProjectView";
 import Projects from "./components/Projects";
+import MyTasks from "./components/tasks/MyTasks";
 import AdminLogin from "./admin/components/AdminLogin";
 import AdminDashboard from "./admin/components/AdminDashboard";
 import "./App.css";
@@ -60,6 +61,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Projects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tasks"
+              element={
+                <ProtectedRoute>
+                  <MyTasks />
                 </ProtectedRoute>
               }
             />

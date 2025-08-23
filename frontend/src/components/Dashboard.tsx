@@ -6,12 +6,14 @@ import Toast from "./Toast";
 import TimesheetService, {
   TimesheetStatus,
 } from "../services/timesheet.service";
+import taskService, { Task as UiTask } from "../services/task.service";
 import Clients from "./Clients";
 import OnboardClient from "./OnboardClient";
 import ProjectsContent from "./ProjectsContent";
 import Profile from "./Profile";
 
 import TimesheetView from "./timesheet/TimesheetView"; // NEW
+import MyTasks from "./tasks/MyTasks";
 
 const Dashboard: React.FC = () => {
   // Apply dark theme styles
@@ -66,6 +68,7 @@ const Dashboard: React.FC = () => {
     | "onboardClient"
     | "projects"
     | "timesheet"
+  | "tasks"
   >("dashboard");
 
   // Theme state
@@ -76,6 +79,7 @@ const Dashboard: React.FC = () => {
     useState<TimesheetStatus | null>(null);
   const [isClockActionLoading, setIsClockActionLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
+  const [recentTasks, setRecentTasks] = useState<UiTask[]>([]);  const [taskActionLoading, setTaskActionLoading] = useState<Record<number, boolean>>({});
 
   // Handle click outside dropdown to close it
   useEffect(() => {
@@ -211,7 +215,15 @@ const Dashboard: React.FC = () => {
     info: "#17A2B8",
   };
 
-  // Fetch timesheet status on component mount
+  // Safe date formatting for tasks
+  const formatDate = (value?: string) => {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleString();
+  };
+
+  // Fetch timesheet status and recent tasks on component mount
   useEffect(() => {
     const fetchStatus = async () => {
       try {
@@ -223,7 +235,66 @@ const Dashboard: React.FC = () => {
     };
 
     fetchStatus();
+
+    const fetchRecentTasks = async () => {
+      try {
+        const all = await taskService.getMyTasks();
+        const sorted = [...all].sort((a,b) => new Date(b.updatedAt || b.createdAt || '').getTime() - new Date(a.updatedAt || a.createdAt || '').getTime());
+        setRecentTasks(sorted.slice(0, 5));
+      } catch (e) {
+        // ignore errors here; block will simply not render
+      }
+    };
+    fetchRecentTasks();
   }, []);
+
+  const updateTaskInList = (updated: UiTask) => {
+    setRecentTasks(prev => prev.map(t => (t.id === updated.id ? { ...t, ...updated } : t)));
+  };
+
+  const setLoading = (id: number, val: boolean) => setTaskActionLoading(prev => ({ ...prev, [id]: val }));
+
+  const handleQuickStart = async (t: UiTask) => {
+    if (!t.id) return;
+    setLoading(t.id, true);
+    try {
+      const resp = t.status === 'paused' ? await taskService.resume(t.id) : await taskService.start(t.id);
+      updateTaskInList(resp.task);
+      setToast({ message: resp.message || 'Task started', type: 'success', isVisible: true });
+    } catch (e) {
+      setToast({ message: 'Failed to start task', type: 'error', isVisible: true });
+    } finally {
+      setLoading(t.id, false);
+    }
+  };
+
+  const handleQuickPause = async (t: UiTask) => {
+    if (!t.id) return;
+    setLoading(t.id, true);
+    try {
+      const resp = await taskService.pause(t.id);
+      updateTaskInList(resp.task);
+      setToast({ message: resp.message || 'Task paused', type: 'success', isVisible: true });
+    } catch (e) {
+      setToast({ message: 'Failed to pause task', type: 'error', isVisible: true });
+    } finally {
+      setLoading(t.id, false);
+    }
+  };
+
+  const handleQuickComplete = async (t: UiTask) => {
+    if (!t.id) return;
+    setLoading(t.id, true);
+    try {
+      const resp = await taskService.complete(t.id);
+      updateTaskInList(resp.task);
+      setToast({ message: resp.message || 'Task completed', type: 'success', isVisible: true });
+    } catch (e) {
+      setToast({ message: 'Failed to complete task', type: 'error', isVisible: true });
+    } finally {
+      setLoading(t.id, false);
+    }
+  };
 
   // Update current time every minute
   useEffect(() => {
@@ -421,6 +492,36 @@ const Dashboard: React.FC = () => {
                   style={{ width: "20px", color: "var(--text-primary)" }}
                 ></i>
                 <span>My Profile</span>
+              </a>
+            </li>
+            <li className="nav-item mb-1">
+              <a
+                className="nav-link d-flex align-items-center py-3 px-3 rounded"
+                style={{
+                  backgroundColor:
+                    currentView === "tasks"
+                      ? "var(--border-color)"
+                      : "transparent",
+                  transition: "all 0.3s ease",
+                  cursor: "pointer",
+                  color: "var(--text-primary)",
+                }}
+                onMouseEnter={(e) =>
+                  currentView !== "tasks" &&
+                  (e.currentTarget.style.backgroundColor = "var(--border-color)")
+                }
+                onMouseLeave={(e) =>
+                  currentView !== "tasks" &&
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
+                onClick={() => {
+                  setCurrentView("tasks");
+                  // Also navigate to a dedicated page
+                  // navigate('/tasks');
+                }}
+              >
+                <i className="fas fa-tasks me-3" style={{ width: "20px", color: "var(--text-primary)" }}></i>
+                <span>My Tasks</span>
               </a>
             </li>
             <li className="nav-item mb-1">
@@ -660,6 +761,8 @@ const Dashboard: React.FC = () => {
                   ? "Project Management"
                   : currentView === "timesheet"
                   ? "Timesheet"
+                  : currentView === "tasks"
+                  ? "My Tasks"
                   : "Dashboard"}
               </h4>
             </div>
@@ -1151,7 +1254,61 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Recent Tasks */}
+                <div className="card border-0 mb-4" style={cardStyle}>
+                  <div className="card-header border-0 py-3" style={{ backgroundColor: "var(--card-bg)", color: "var(--text-primary)" }}>
+                    <h5 className="h5 mb-0">
+                      <i className="fas fa-tasks me-2" style={{ color: colorTheme.accent }}></i>
+                      Recent Tasks
+                    </h5>
+                  </div>
+                  <div className="card-body">
+                    {recentTasks.length === 0 ? (
+                      <div className="text-muted">No recent tasks.</div>
+                    ) : (
+                      <ul className="list-unstyled mb-0">
+                        {recentTasks.map((t) => (
+                          <li key={t.id} className="d-flex align-items-center justify-content-between mb-3">
+                            <div className="d-flex align-items-start">
+                              <div className="me-3" style={{ width: 40, height: 40 }}>
+                                <div className="rounded-circle d-flex align-items-center justify-content-center"
+                                  style={{ width: 40, height: 40, backgroundColor: t.status === 'completed' ? '#28A745' : t.status === 'in_progress' ? '#7EC8EC' : t.status === 'paused' ? '#FFC107' : '#666983' }}>
+                                  <i className={`fas ${t.status === 'completed' ? 'fa-check' : t.status === 'in_progress' ? 'fa-play' : t.status === 'paused' ? 'fa-pause' : 'fa-circle' } text-white`}></i>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="fw-bold" style={{ color: "var(--text-primary)" }}>{t.name}</div>
+                                <small style={{ color: "var(--text-secondary)" }}>
+                                  {t.project?.projectCode || t.project?.projectName || `Project #${t.projectId}`} · {(t.status || '').replace('_',' ')} · {formatDate(t.updatedAt || t.createdAt)}
+                                </small>
+                              </div>
+                            </div>
+                            <div className="btn-group">
+                              {(t.status === 'pending' || t.status === 'paused') && (
+                                <button className="btn btn-sm btn-outline-success" disabled={!!taskActionLoading[t.id!]} onClick={() => handleQuickStart(t)}>
+                                  {taskActionLoading[t.id!] ? <span className="spinner-border spinner-border-sm" /> : <i className="fas fa-play"></i>} Start
+                                </button>
+                              )}
+                              {t.status === 'in_progress' && (
+                                <button className="btn btn-sm btn-outline-warning" disabled={!!taskActionLoading[t.id!]} onClick={() => handleQuickPause(t)}>
+                                  {taskActionLoading[t.id!] ? <span className="spinner-border spinner-border-sm" /> : <i className="fas fa-pause"></i>} Pause
+                                </button>
+                              )}
+                              {(t.status === 'in_progress' || t.status === 'paused' || t.status === 'pending') && (
+                                <button className="btn btn-sm btn-outline-primary" disabled={!!taskActionLoading[t.id!]} onClick={() => handleQuickComplete(t)}>
+                                  {taskActionLoading[t.id!] ? <span className="spinner-border spinner-border-sm" /> : <i className="fas fa-check"></i>} Complete
+                                </button>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
               </div>
+
 
               {/* Right Column */}
               <div className="col-md-4">
@@ -1343,6 +1500,9 @@ const Dashboard: React.FC = () => {
         ) : currentView === "timesheet" ? (
           // Timesheet View
           <TimesheetView />
+        ) : currentView === "tasks" ? (
+          // My Tasks inline view
+          <MyTasks />
         ) : (
           <ProjectsContent />
         )}

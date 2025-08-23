@@ -3,6 +3,7 @@ import Modal from '../common/Modal';
 import { Project } from '../../services/project.service';
 import ProjectService from '../../services/project.service';
 import UserService, { TeamMember } from '../../services/user.service';
+import TaskService from '../../services/task.service';
 import AddTaskModal from '../AddTaskModal';
 
 interface ViewProjectModalProps {
@@ -41,6 +42,12 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ project, isOpen, on
   const [preselectedAssigneeId, setPreselectedAssigneeId] = useState<number | undefined>(undefined);
   const [details, setDetails] = useState<Project | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<TeamMember[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   // Load full project details (with tasks, members, docs) when modal opens
   useEffect(() => {
@@ -88,6 +95,34 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ project, isOpen, on
     };
     loadTeam();
   }, [isOpen]);
+
+  // Fetch search results when query changes (debounced)
+  useEffect(() => {
+    let active = true;
+    const doSearch = async () => {
+      if (!showAddMember) return;
+      if (!searchQuery || searchQuery.trim().length < 2) {
+        if (active) {
+          setSearchResults([]);
+          setSearchError(null);
+        }
+        return;
+      }
+      try {
+        setSearchLoading(true);
+        setSearchError(null);
+        const results = await UserService.searchUsers({ q: searchQuery.trim(), limit: 10 });
+        if (active) setSearchResults(results);
+      } catch (e: any) {
+        if (active) setSearchError(e?.message || 'Failed to search users');
+      } finally {
+        if (active) setSearchLoading(false);
+      }
+    };
+
+    const id = setTimeout(doSearch, 300);
+    return () => { active = false; clearTimeout(id); };
+  }, [searchQuery, showAddMember]);
 
   if (!isOpen || !project) return null;
 
@@ -148,8 +183,17 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ project, isOpen, on
 
 {/* Team */}
         <Divider />
-        <SectionTitle icon="fas fa-users" title="Team Members" />
+       <div className="d-flex align-items-center justify-content-between">
+  <SectionTitle icon="fas fa-users" title="Team Members" />
 
+  <button
+    type="button"
+    className="btn btn-sm btn-outline-primary"
+    onClick={() => setShowAddMember(true)}
+  >
+    <i className="fas fa-plus" /> Add
+  </button>
+</div>
         {/* Team member picker (account manager's team) */}
         <div className="mb-2" style={{ overflowX: 'auto' }}>
           <div className="d-flex" style={{ gap: 12 }}>
@@ -162,14 +206,14 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ project, isOpen, on
             {!loadingTeam && teamPicker.map((tm) => {
               const initials = `${(tm.firstName||'').charAt(0)}${(tm.lastName||'').charAt(0)}`.toUpperCase();
               return (
-                <button key={tm.id} type="button" className="btn btn-light d-flex align-items-center" title={`Add ${tm.firstName} ${tm.lastName} via task`}
+                <button key={tm.id} type="button" title={`Add ${tm.firstName} ${tm.lastName} via task`}
                   onClick={() => { setPreselectedAssigneeId(tm.id); setShowAddTask(true); }}
-                  style={{ border: '1px solid var(--border-color)', borderRadius: 999, padding: '4px 10px' }}>
-                  <span className="me-2 d-inline-flex align-items-center justify-content-center"
+                  style={{ display:'flex', alignItems:'center', gap:8, border: '1px solid var(--border-color)', borderRadius: 999, padding: '4px 10px', background:'var(--card-bg)', color:'var(--text-primary)' }}>
+                  <span className="d-inline-flex align-items-center justify-content-center"
                         style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent-blue)', color: '#fff', fontSize: 12 }}>
                     {initials || <i className="fas fa-user" />}
                   </span>
-                  <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>{tm.firstName} {tm.lastName}</span>
+                  <span style={{ fontSize: 12 }}>{tm.firstName} {tm.lastName}</span>
                 </button>
               );
             })}
@@ -241,6 +285,101 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ project, isOpen, on
           </>
         ) : null}
       </div>
+      {/* Add Team Member modal */}
+      {showAddMember && (
+        <Modal
+          isOpen={showAddMember}
+          onClose={() => { setShowAddMember(false); setSearchQuery(''); setSearchResults([]); setSelectedUserId(null); setSearchError(null); }}
+          title="Add team member"
+          size="md"
+        >
+          <div>
+            <div className="mb-3">
+              <label className="form-label">Search users</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Type a name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <div className="form-text">Search globally across all users. Minimum 2 characters.</div>
+            </div>
+
+            {searchError && <div className="alert alert-danger">{searchError}</div>}
+
+            <div style={{ maxHeight: 240, overflow: 'auto', border: '1px solid var(--border-color)', borderRadius: 8 }}>
+              {searchLoading ? (
+                <div className="p-3 text-muted" style={{ fontSize: 13 }}>Searching…</div>
+              ) : searchQuery.trim().length >= 2 && searchResults.length === 0 ? (
+                <div className="p-3 text-muted" style={{ fontSize: 13 }}>No results</div>
+              ) : (
+                <ul className="list-group list-group-flush">
+                  {searchResults.map((u) => (
+                    <li
+                      key={u.id}
+                      className="list-group-item d-flex align-items-center"
+                      style={{ cursor: 'pointer', background: selectedUserId === u.id ? 'var(--hover-bg)' : 'transparent' }}
+                      onClick={() => setSelectedUserId(u.id)}
+                    >
+                      <span className="badge rounded-circle me-2 d-inline-flex align-items-center justify-content-center" style={{ width: 28, height: 28, background: 'var(--accent-blue)', color: '#fff' }}>
+                        <i className="fas fa-user" />
+                      </span>
+                      <div>
+                        <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>{u.firstName} {u.lastName}</div>
+                        <small className="text-muted">{u.email}{u.department ? ` • ${u.department}` : ''}</small>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="d-flex justify-content-end gap-2 mt-3">
+              <button type="button" className="btn btn-outline-secondary" onClick={() => { setShowAddMember(false); setSearchQuery(''); setSearchResults([]); setSelectedUserId(null); setSearchError(null); }}>Cancel</button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!selectedUserId || searchLoading}
+                onClick={async () => {
+                  if (!selectedUserId) return;
+                  try {
+                    // Create onboarding task to trigger acceptance flow
+                    await TaskService.createTask({
+                      projectId: (details || project).id,
+                      name: `Onboard to ${view.name}`,
+                      description: `Auto-generated onboarding task to add to project ${view.name}`,
+                      assignedTo: selectedUserId,
+                      estimatedTime: 1
+                    });
+
+                    // Refresh project details to reflect pending member task
+                    try {
+                      const full = await ProjectService.getProject((details || project).id);
+                      setDetails(full);
+                    } catch (err) {
+                      console.error('Failed to refresh project after adding member', err);
+                    }
+
+                    setShowAddMember(false);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setSelectedUserId(null);
+                    setSearchError(null);
+                  } catch (err: any) {
+                    const msg = err?.response?.data?.message || err?.message || 'Failed to create onboarding task';
+                    setSearchError(msg);
+                  }
+                }}
+              >
+                <i className="fas fa-user-plus me-2"></i>
+                Add
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* Add Task modal, optionally preselecting assignee */}
       <AddTaskModal
         show={showAddTask}

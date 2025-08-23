@@ -128,6 +128,80 @@ class EmailService {
       throw new Error('Failed to send password reset email');
     }
   }
+  async sendTaskStatusEmail(task, verb, actorUser) {
+    try {
+      const { Project, User } = require('../models');
+      const project = await Project.findByPk(task.projectId);
+      const pm = project?.projectManagerId ? await User.findByPk(project.projectManagerId) : null;
+      // Find account managers (simple query: role ACM)
+      const sequelize = require('../config/database');
+      const [ams] = await sequelize.query(`
+        SELECT u.email, u.first_name AS firstName, u.last_name AS lastName
+        FROM users u
+        LEFT JOIN role_masters rm ON u.role_id = rm.id
+        WHERE rm.role_code = 'ACM' AND u.is_active = true
+      `);
+
+      const recipients = [];
+      if (pm?.email) recipients.push(pm.email);
+      for (const am of ams || []) recipients.push(am.email);
+      if (!recipients.length) return;
+
+      const subject = `Task ${verb}: ${task.name}`;
+      const html = `
+        <p>Hello,</p>
+        <p>Task <strong>${task.name}</strong> in project <strong>${project?.projectName || task.projectId}</strong> was <strong>${verb}</strong> by ${actorUser?.firstName || 'a user'} ${actorUser?.lastName || ''}.</p>
+        <ul>
+          <li>Status: ${task.status}</li>
+          <li>Total tracked: ${Math.round((task.totalTrackedSeconds||0)/60)} min</li>
+        </ul>
+        <p>Regards,<br/>TimeSheet Pro</p>
+      `;
+
+      await this.transporter.sendMail({
+        from: `"TimeSheet Pro" <${process.env.EMAIL_FROM || 'noreply@timesheet.com'}>`,
+        to: recipients.join(','),
+        subject,
+        html
+      });
+    } catch (err) {
+      console.error('Failed to send task status email', err);
+    }
+  }
+
+  async sendProjectClosedEmail(project, actorUser, reason) {
+    try {
+      const { User } = require('../models');
+      const pm = project?.projectManagerId ? await User.findByPk(project.projectManagerId) : null;
+      const teamRecipients = [];
+      const sequelize = require('../config/database');
+      const [team] = await sequelize.query(`
+        SELECT DISTINCT u.email
+        FROM tasks t
+        JOIN users u ON u.id = t.assigned_to
+        WHERE t.project_id = $1
+      `, { bind: [project.id] });
+      for (const m of team || []) if (m.email) teamRecipients.push(m.email);
+      const to = [pm?.email, ...teamRecipients].filter(Boolean).join(',');
+      if (!to) return;
+
+      const subject = `Project closed: ${project.projectName}`;
+      const html = `
+        <p>Hello,</p>
+        <p>Project <strong>${project.projectName}</strong> was closed by ${actorUser?.firstName || 'a user'} ${actorUser?.lastName || ''}.</p>
+        ${reason ? `<p>Reason: ${reason}</p>` : ''}
+        <p>Regards,<br/>TimeSheet Pro</p>
+      `;
+      await this.transporter.sendMail({
+        from: `"TimeSheet Pro" <${process.env.EMAIL_FROM || 'noreply@timesheet.com'}>`,
+        to,
+        subject,
+        html
+      });
+    } catch (err) {
+      console.error('Failed to send project closed email', err);
+    }
+  }
 }
 
 module.exports = new EmailService();

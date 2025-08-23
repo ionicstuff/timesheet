@@ -538,6 +538,49 @@ const getProjectFiles = async (req, res) => {
   }
 };
 
+const { Project, Task, Client } = require('../models');
+const emailService = require('../services/emailService');
+
+const closeProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body || {};
+
+    // Ensure project exists
+    const project = await Project.findByPk(id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    // Ensure the actor is the assigned Project Manager OR the Client's Account Manager
+    const client = project.clientId ? await Client.findByPk(project.clientId) : null;
+    const isAssignedPM = project.projectManagerId && project.projectManagerId === req.user.id;
+    const isAssignedAM = client?.accountManagerId && client.accountManagerId === req.user.id;
+    if (!isAssignedPM && !isAssignedAM) {
+      return res.status(403).json({ message: 'Only the assigned Project Manager or Account Manager can close this project' });
+    }
+
+    // Require all tasks to be completed and no running timers
+    const { Op } = require('sequelize');
+    const openCount = await Task.count({ where: { projectId: id, status: { [Op.ne]: 'completed' } } });
+    const runningCount = await Task.count({ where: { projectId: id, activeTimerStartedAt: { [Op.ne]: null } } });
+    if (openCount > 0 || runningCount > 0) {
+      return res.status(400).json({ message: 'Cannot close project until all tasks are completed and no timers are running' });
+    }
+
+    project.status = 'completed';
+    project.closedAt = new Date();
+    project.closedByUserId = req.user.id;
+    project.closedReason = reason || project.closedReason;
+    await project.save();
+
+    void emailService.sendProjectClosedEmail(project, req.user, reason).catch(() => {});
+
+    res.json({ message: 'Project closed successfully', project });
+  } catch (error) {
+    console.error('Error closing project:', error);
+    res.status(500).json({ message: 'Error closing project', error: error.message });
+  }
+};
+
 module.exports = {
   getProjects,
   getProject,
@@ -548,5 +591,6 @@ module.exports = {
   uploadProjectFiles,
   getProjectFiles,
   getManagers,
-  getUsers
+  getUsers,
+  closeProject
 };

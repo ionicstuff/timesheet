@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ProjectService, { Project } from '../services/project.service';
 import axios from 'axios';
+import SpocService from '../services/spoc.service';
 import ViewProjectModal from './projects/ViewProjectModal';
 import EditProjectModal from './projects/EditProjectModal';
 
@@ -18,6 +19,12 @@ style.textContent = `
   .tabs { border-bottom:1px solid var(--border-color); margin-bottom:12px; }
   .tabs .tab { padding:8px 12px; border:1px solid transparent; border-top-left-radius:8px; border-top-right-radius:8px; color: var(--text-secondary); background: transparent; }
   .tabs .tab.active { color: var(--text-primary); background: var(--card-bg); border-color: var(--border-color); border-bottom-color: var(--card-bg); }
+
+  /* Ensure form labels/headings are visible */
+  .form-label { color: var(--text-primary) !important; font-weight: 600; }
+  .field-inline { display:flex; align-items:center; gap:8px; }
+  .inline-add { border:1px dashed var(--border-color); color: var(--accent-blue); background: transparent; border-radius:6px; padding:4px 8px; font-size:12px; font-weight:600; }
+  .inline-add:hover { background: rgba(79,123,255,0.1); }
 
   .client-table-wrap { border:1px solid var(--border-color); border-radius:12px; overflow:hidden; background: var(--card-bg); }
   table.client-table { width:100%; border-collapse:collapse; }
@@ -43,6 +50,14 @@ style.textContent = `
 
   .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:14px; }
   .card { background: var(--card-bg); border:1px solid var(--border-color); border-radius:12px; padding:14px; display:flex; gap:10px; flex-direction:column; }
+
+  /* Centered modal overlay for quick-add */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index: 2000; }
+  .modal-card { width:100%; max-width: 420px; background: var(--card-bg); color: var(--text-primary); border:1px solid var(--border-color); border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+  .modal-card .modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border-color); }
+  .modal-card .modal-body { padding:16px; }
+  .modal-card .modal-footer { display:flex; gap:8px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--border-color); }
+  .btn-close { filter: invert(1); opacity:.7; }
 `;
 document.head.appendChild(style);
 
@@ -75,6 +90,12 @@ const ProjectsContent: React.FC = () => {
   const [newProject, setNewProject] = useState({ name:'', clientId:0, spocId:0, endDate:'', briefReceivedOn:'', estimatedTime:'' });
   const [isCreating, setIsCreating] = useState(false);
 
+  // Quick-add modals
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [showAddSpoc, setShowAddSpoc] = useState(false);
+  const [quickClientName, setQuickClientName] = useState('');
+  const [quickSpoc, setQuickSpoc] = useState({ name:'', email:'' });
+
   useEffect(() => {
     (async () => {
       try {
@@ -106,7 +127,12 @@ const ProjectsContent: React.FC = () => {
   const handleClientChange = (clientId: number) => {
     setNewProject(prev => ({ ...prev, clientId, spocId: 0 }));
     const c = clients.find(x => x.id === clientId);
-    setSpocs(c?.spocs || []);
+    const fromClient = c?.spocs || [];
+    setSpocs(fromClient);
+    // As a fallback, fetch fresh from API in case list is stale
+    if (clientId && !fromClient.length) {
+      SpocService.getByClient(clientId).then(setSpocs).catch(() => {});
+    }
   };
 
   const handleCreateProject = async (e: React.FormEvent) => {
@@ -239,14 +265,24 @@ const ProjectsContent: React.FC = () => {
                 <input type="text" className="form-control" value={newProject.name} onChange={(e)=>setNewProject(prev=>({ ...prev, name:e.target.value }))} required />
               </div>
               <div className="mb-3">
-                <label className="form-label">Client</label>
+                <div className="field-inline">
+                  <label className="form-label mb-0">Client</label>
+                  <button type="button" className="inline-add" onClick={()=>setShowAddClient(true)} title="Quick add client">
+                    <i className="fas fa-plus"/> Add
+                  </button>
+                </div>
                 <select className="form-select" value={newProject.clientId} onChange={(e)=>handleClientChange(Number(e.target.value))} required>
                   <option value={0} disabled>Select Client</option>
                   {clients.map(c=> <option key={c.id} value={c.id}>{c.clientName}</option>)}
                 </select>
               </div>
               <div className="mb-3">
-                <label className="form-label">Client SPOC</label>
+                <div className="field-inline">
+                  <label className="form-label mb-0">Client SPOC</label>
+                  <button type="button" className="inline-add" onClick={()=>setShowAddSpoc(true)} disabled={!newProject.clientId} title="Quick add SPOC">
+                    <i className="fas fa-plus"/> Add
+                  </button>
+                </div>
                 <select className="form-select" value={newProject.spocId} onChange={(e)=>setNewProject(prev=>({ ...prev, spocId:Number(e.target.value) }))} disabled={!spocs.length}>
                   <option value={0} disabled>Select Client SPOC</option>
                   {spocs.map(s=> <option key={s.id} value={s.id}>{s.name} ({s.email})</option>)}
@@ -377,6 +413,68 @@ const ProjectsContent: React.FC = () => {
 
       <ViewProjectModal project={viewProject} isOpen={!!viewProject} onClose={()=>setViewProject(null)} />
       <EditProjectModal project={editProject} isOpen={!!editProject} onClose={()=>setEditProject(null)} onProjectUpdated={handleProjectUpdated} />
+
+      {/* Quick Add Client Modal */}
+      {showAddClient && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h5 className="modal-title">Add Client</h5>
+              <button type="button" className="btn-close" onClick={() => setShowAddClient(false)} aria-label="Close" />
+            </div>
+            <div className="modal-body">
+              <label className="form-label">Client Name</label>
+              <input className="form-control" value={quickClientName} onChange={(e)=>setQuickClientName(e.target.value)} placeholder="Enter client name" />
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline-secondary" onClick={() => setShowAddClient(false)}>Cancel</button>
+              <button className="btn btn-primary" disabled={!quickClientName.trim()} onClick={async()=>{
+                try{
+                  const created:any = await (await import('../services/client.service')).default.createClient({ clientName: quickClientName.trim() });
+                  setClients(prev=>[...prev, created]);
+                  setQuickClientName('');
+                  setShowAddClient(false);
+                }catch(e){ console.error(e); }
+              }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Add SPOC Modal */}
+      {showAddSpoc && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h5 className="modal-title">Add Client SPOC</h5>
+              <button type="button" className="btn-close" onClick={() => setShowAddSpoc(false)} aria-label="Close" />
+            </div>
+            <div className="modal-body">
+              <div className="mb-3">
+                <label className="form-label">Name</label>
+                <input className="form-control" value={quickSpoc.name} onChange={(e)=>setQuickSpoc(v=>({...v, name:e.target.value}))} />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Email</label>
+                <input className="form-control" type="email" value={quickSpoc.email} onChange={(e)=>setQuickSpoc(v=>({...v, email:e.target.value}))} />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline-secondary" onClick={() => setShowAddSpoc(false)}>Cancel</button>
+              <button className="btn btn-primary" disabled={!quickSpoc.name.trim()||!quickSpoc.email.trim()||!newProject.clientId} onClick={async()=>{
+                try{
+                  const created = await SpocService.create({ name: quickSpoc.name.trim(), email: quickSpoc.email.trim(), clientId: newProject.clientId });
+                  const fresh = await SpocService.getByClient(newProject.clientId);
+                  setSpocs(fresh);
+                  setNewProject(prev=>({...prev, spocId: created.id }));
+                  setQuickSpoc({name:'', email:''});
+                  setShowAddSpoc(false);
+                }catch(e){ console.error(e); }
+              }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -32,6 +32,36 @@ router.get('/',
   getAllUsers
 );
 
+// Lightweight global search for quick-pick in project modal
+router.get('/search', async (req, res, next) => {
+  try {
+    // Reuse controller filtering but force small page size and return minimal fields
+    req.query.page = req.query.page || '1';
+    req.query.limit = req.query.limit || '20';
+    req.query.search = req.query.query || req.query.search || '';
+    // call getAllUsers and then map minimal shape
+    const _res = {
+      json(payload){
+        try{
+          const users = (payload?.data?.users) || [];
+          const minimal = users.map(u=>({
+            id: u.id,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            email: u.email,
+            department: u.department,
+            designation: u.designation,
+          }));
+          res.json({ success:true, data:minimal });
+        }catch(e){ next(e); }
+      }
+    };
+    await getAllUsers(req, _res);
+  } catch (e) {
+    next(e);
+  }
+});
+
 // @route   GET /api/users/stats
 // @desc    Get user statistics and dashboard data
 // @access  Private (HR, Admin, Manager)
