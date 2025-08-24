@@ -1,0 +1,240 @@
+{
+  "info": {
+    "name": "Timesheet API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Passw0rd!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (sets token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "let json = {}; try { json = pm.response.json(); } catch (e) {}",
+                  "const token = json.token || json.data?.token || json.accessToken || json.data?.accessToken || json?.payload?.token;",
+                  "if (token) { pm.environment.set('token', token); pm.collectionVariables.set('token', token); }",
+                  "const userId = json.user?.id || json.data?.user?.id; if (userId) pm.environment.set('userId', userId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Passw0rd!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{base_url}}/api/auth/me"
+          }
+        },
+        {
+          "name": "Validate Token",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "{{base_url}}/api/auth/validate"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": "{{base_url}}/api/auth/forgot-password",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"john.doe@example.com\"\n}" }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": "{{base_url}}/api/auth/reset-password",
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"{{reset_token}}\",\n  \"password\": \"NewPassw0rd!\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        { "name": "List Users", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/users" } },
+        { "name": "Search Users", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/users/search?query=john" } },
+        { "name": "User Stats", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/users/stats" } },
+        { "name": "My Profile", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/users/profile" } },
+        { "name": "My Team", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/users/team" } },
+        { "name": "Team by Manager", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/users/{{managerId}}/team" } },
+        { "name": "Get User", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/users/{{userId}}" } },
+        { "name": "Create User", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/users", "body": {"mode":"raw","raw":"{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"password\": \"Passw0rd!\"\n}"} } },
+        { "name": "Update User", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/users/{{userId}}", "body": {"mode":"raw","raw":"{\n  \"firstName\": \"Jane\"\n}"} } },
+        { "name": "Update User Hierarchy", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/users/{{userId}}/hierarchy", "body": {"mode":"raw","raw":"{\n  \"managerId\": 1\n}"} } },
+        { "name": "Deactivate User", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/users/{{userId}}" } }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        { "name": "List My Clients", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/clients" } },
+        { "name": "List All Clients", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/clients/all" } },
+        { "name": "Client Industries", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/clients/industries" } },
+        { "name": "Get Client", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/clients/{{clientId}}" } },
+        { "name": "Create Client", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/clients", "body": {"mode":"raw","raw":"{\n  \"clientName\": \"ACME Corp\",\n  \"industry\": \"Software\"\n}"} } },
+        { "name": "Update Client", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/clients/{{clientId}}", "body": {"mode":"raw","raw":"{\n  \"clientName\": \"ACME Updated\"\n}"} } }
+      ]
+    },
+    {
+      "name": "Client Management (Admin/Manager)",
+      "item": [
+        { "name": "List Clients (Mgmt)", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/client-management" } },
+        { "name": "List All Clients (Mgmt)", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/client-management/all" } },
+        { "name": "Create Client (Mgmt)", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/client-management", "body": {"mode":"raw","raw":"{\n  \"clientName\": \"ACME Corp\",\n  \"industry\": \"Software\"\n}"} } },
+        { "name": "Get Client (Mgmt)", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/client-management/{{clientId}}" } },
+        { "name": "Update Client (Mgmt)", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/client-management/{{clientId}}", "body": {"mode":"raw","raw":"{\n  \"clientName\": \"ACME Updated\"\n}"} } },
+        { "name": "Delete Client (Mgmt)", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/client-management/{{clientId}}" } }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        { "name": "List Projects", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/projects" } },
+        { "name": "Project Managers", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/projects/managers" } },
+        { "name": "Project Users (dropdown)", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/projects/users" } },
+        { "name": "Create Project", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/projects", "body": {"mode":"raw","raw":"{\n  \"name\": \"New Project\",\n  \"description\": \"desc\",\n  \"clientId\": {{clientId}},\n  \"spocId\": {{spocId}},\n  \"managerId\": {{userId}},\n  \"startDate\": \"2025-08-01\",\n  \"endDate\": \"2025-09-30\",\n  \"estimatedTime\": 40\n}"} } },
+        { "name": "Get Project", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/projects/{{projectId}}" } },
+        { "name": "Performance", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/projects/{{projectId}}/performance" } },
+        { "name": "Update Project", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/projects/{{projectId}}", "body": {"mode":"raw","raw":"{\n  \"name\": \"Updated Project\"\n}"} } },
+        { "name": "Update Project Details", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/projects/{{projectId}}/details", "body": {"mode":"raw","raw":"{\n  \"teamNotes\": \"Notes\",\n  \"priority\": \"medium\",\n  \"status\": \"active\"\n}"} } },
+        { "name": "Upload Project File", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/projects/{{projectId}}/upload", "body": {"mode":"formdata","formdata":[{"key":"file","type":"file","src":""}]} } },
+        { "name": "Project Files", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/projects/{{projectId}}/files" } },
+        { "name": "Close Project", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/projects/{{projectId}}/close", "body": {"mode":"raw","raw":"{\n  \"reason\": \"Done\"\n}"} } },
+        { "name": "Delete Project", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/projects/{{projectId}}" } }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        { "name": "List Tasks", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks" } },
+        { "name": "My Tasks", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks/my-tasks" } },
+        { "name": "Create Task", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/tasks", "body": {"mode":"raw","raw":"{\n  \"projectId\": {{projectId}},\n  \"name\": \"Design\",\n  \"description\": \"UI\",\n  \"assignedTo\": {{userId}},\n  \"estimatedTime\": 8\n}"} } },
+        { "name": "Tasks by Project", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks/project/{{projectId}}" } },
+        { "name": "Accept Task", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks/{{taskId}}/accept" } },
+        { "name": "Reject Task", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/tasks/{{taskId}}/reject", "body": {"mode":"raw","raw":"{\n  \"rejectionReason\": \"Not relevant\"\n}"} } },
+        { "name": "Start Task Timer", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks/{{taskId}}/start" } },
+        { "name": "Pause Task Timer", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks/{{taskId}}/pause" } },
+        { "name": "Resume Task Timer", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks/{{taskId}}/resume" } },
+        { "name": "Stop Task Timer", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks/{{taskId}}/stop" } },
+        { "name": "Complete Task", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks/{{taskId}}/complete" } },
+        { "name": "Task Time Logs", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks/{{taskId}}/logs" } },
+        { "name": "Get Task", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks/{{taskId}}" } },
+        { "name": "Update Task", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/tasks/{{taskId}}", "body": {"mode":"raw","raw":"{\n  \"name\": \"Design Updated\"\n}"} } },
+        { "name": "Delete Task", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/tasks/{{taskId}}" } }
+      ]
+    },
+    {
+      "name": "Timesheet",
+      "item": [
+        { "name": "Clock In", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/timesheet/clockin", "body": {"mode":"raw","raw":"{}"} } },
+        { "name": "Clock Out", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/timesheet/clockout", "body": {"mode":"raw","raw":"{}"} } },
+        { "name": "Status", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/timesheet/status" } }
+      ]
+    },
+    {
+      "name": "Timesheet Entries",
+      "item": [
+        { "name": "List for Date", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/timesheet-entries?date={{date}}" } },
+        { "name": "Create Entry", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/timesheet-entries", "body": {"mode":"raw","raw":"{\n  \"date\": \"{{date}}\",\n  \"projectId\": {{projectId}},\n  \"taskId\": {{taskId}},\n  \"minutes\": 60,\n  \"isBillable\": true,\n  \"description\": \"Work\"\n}"} } },
+        { "name": "Update Entry", "request": { "method": "PATCH", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/timesheet-entries/{{timesheetEntryId}}", "body": {"mode":"raw","raw":"{\n  \"minutes\": 75\n}"} } },
+        { "name": "Delete Entry", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/timesheet-entries/{{timesheetEntryId}}" } },
+        { "name": "Submit Day", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/timesheet-entries/submit", "body": {"mode":"raw","raw":"{\n  \"date\": \"{{date}}\"\n}"} } }
+      ]
+    },
+    {
+      "name": "SPOCs",
+      "item": [
+        { "name": "List SPOCs", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/spocs" } },
+        { "name": "SPOCs by Client", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/spocs/client/{{clientId}}" } },
+        { "name": "Create SPOC", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/spocs", "body": {"mode":"raw","raw":"{\n  \"clientId\": {{clientId}},\n  \"name\": \"Alice\",\n  \"email\": \"alice@example.com\"\n}"} } },
+        { "name": "Update SPOC", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/spocs/{{spocId}}", "body": {"mode":"raw","raw":"{\n  \"phone\": \"+1-234\"\n}"} } },
+        { "name": "Delete SPOC", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/spocs/{{spocId}}" } }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        { "name": "Dashboard Stats", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/dashboard/stats" } },
+        { "name": "Roles - List", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/roles" } },
+        { "name": "Roles - Create", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/admin/roles", "body": {"mode":"raw","raw":"{\n  \"roleName\": \"Manager\"\n}"} } },
+        { "name": "Roles - Update", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/admin/roles/{{roleId}}", "body": {"mode":"raw","raw":"{\n  \"roleName\": \"Manager Updated\"\n}"} } },
+        { "name": "Roles - Delete", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/roles/{{roleId}}" } },
+        { "name": "Admin Users - List", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/users" } },
+        { "name": "Admin Users - Get", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/users/{{userId}}" } },
+        { "name": "Admin Users - Create", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/admin/users", "body": {"mode":"raw","raw":"{\n  \"firstName\": \"Admin\",\n  \"lastName\": \"User\",\n  \"email\": \"admin.new@example.com\",\n  \"password\": \"Passw0rd!\"\n}"} } },
+        { "name": "Admin Users - Update", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/admin/users/{{userId}}", "body": {"mode":"raw","raw":"{\n  \"firstName\": \"Admin Updated\"\n}"} } },
+        { "name": "Admin Users - Delete", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/users/{{userId}}" } },
+        { "name": "Permissions - List", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/permissions" } },
+        { "name": "Modules - List", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/modules" } },
+        { "name": "Admin Clients - List", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/clients" } },
+        { "name": "Admin Clients - Create", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/admin/clients", "body": {"mode":"raw","raw":"{\n  \"clientName\": \"ACME\"\n}"} } },
+        { "name": "Admin Clients - Update", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/admin/clients/{{clientId}}", "body": {"mode":"raw","raw":"{\n  \"clientName\": \"ACME Updated\"\n}"} } },
+        { "name": "Admin Clients - Delete", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/clients/{{clientId}}" } },
+        { "name": "Admin Projects - List", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/projects" } },
+        { "name": "Admin Projects - Create", "request": { "method": "POST", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/admin/projects", "body": {"mode":"raw","raw":"{\n  \"name\": \"Proj\",\n  \"clientId\": {{clientId}}\n}"} } },
+        { "name": "Admin Projects - Update", "request": { "method": "PUT", "header": [ {"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"} ], "url": "{{base_url}}/api/admin/projects/{{projectId}}", "body": {"mode":"raw","raw":"{\n  \"name\": \"Proj Updated\"\n}"} } },
+        { "name": "Admin Projects - Delete", "request": { "method": "DELETE", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/projects/{{projectId}}" } },
+        { "name": "Departments - List", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/departments" } },
+        { "name": "Designations - List", "request": { "method": "GET", "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ], "url": "{{base_url}}/api/admin/designations" } }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.environment.get('date')) { pm.environment.set('date', new Date().toISOString().slice(0,10)); }"
+        ]
+      }
+    }
+  ]
+}
+

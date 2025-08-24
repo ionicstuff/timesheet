@@ -84,7 +84,11 @@ export interface Project {
   deliverables?: string;
   attachments?: ProjectAttachment[];
   clientLinks?: string;
-  // Additional properties from backend response
+  // Backend-computed counts for list view
+  tasksCount?: number;
+  openTasksCount?: number;
+  membersCount?: number;
+  // Additional properties for detailed view fallback
   teamMembers?: Array<{
     taskName?: string;
     assignedTo?: {
@@ -245,6 +249,17 @@ class ProjectService {
       return response.data;
     } catch (error) {
       console.error('Error fetching managers:', error);
+      throw error;
+    }
+  }
+
+  // Close a project (PM or AM only; backend enforces task completion)
+  async closeProject(id: number, reason?: string): Promise<{ message: string; project: Project }> {
+    try {
+      const response = await api.post(`/projects/${id}/close`, { reason });
+      return response.data;
+    } catch (error) {
+      console.error('Error closing project:', error);
       throw error;
     }
   }

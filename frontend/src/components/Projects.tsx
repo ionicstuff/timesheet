@@ -668,6 +668,36 @@ const Projects: React.FC = () => {
                               Edit
                             </button>
                             <button
+                              className="btn btn-sm me-2"
+                              style={{
+                                backgroundColor: "#ffc107",
+                                borderColor: "#ffc107",
+                                color: "#212529",
+                                fontSize: "12px",
+                                padding: "6px 12px",
+                                borderRadius: "6px",
+                                fontWeight: "600",
+                                marginRight: "8px",
+                              }}
+                              onClick={async ()=>{
+                                // Auto-close without prompts if there are no tasks or no open tasks
+                                const tasksCount = (p as any).tasksCount ?? ((p as any).tasks?.length ?? 0);
+                                const openTasks = (p as any).openTasksCount ?? (tasksCount > 0 ? tasksCount : 0);
+                                if (tasksCount === 0 || openTasks === 0) {
+                                  try { await ProjectService.closeProject(p.id as any); fetchProjects(); }
+                                  catch(err:any){ alert(err?.response?.data?.message || err?.message || 'Failed to close project'); }
+                                  return;
+                                }
+                                // Otherwise confirm
+                                if(!window.confirm(`This project has ${openTasks} open task(s). You can only close a project when all tasks are completed. Do you want to try closing anyway?`)) return;
+                                try{ await ProjectService.closeProject(p.id as any); fetchProjects(); }
+                                catch(err:any){ alert(err?.response?.data?.message || err?.message || 'Failed to close project'); }
+                              }}
+                            >
+                              <i className="fas fa-check-circle me-1"></i>
+                              Close
+                            </button>
+                            <button
                               className="btn btn-sm"
                               style={{
                                 backgroundColor: "#dc3545",

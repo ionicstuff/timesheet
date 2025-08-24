@@ -206,8 +206,8 @@ const ProjectsContent: React.FC = () => {
           case 'clientName': return p.client?.name || '';
           case 'createdAt': return new Date((p as any).createdAt ?? (p as any).created_at ?? 0).getTime();
           case 'status': return statusKey(p);
-          case 'members': return p.teamMembers?.length ?? 0;
-          case 'tasks': return p.tasks?.length ?? 0;
+          case 'members': return (p.membersCount ?? (p.teamMembers?.length ?? 0));
+          case 'tasks': return (p.tasksCount ?? (p.tasks?.length ?? 0));
         }
       };
       const va:any = getVal(a, sortBy); const vb:any = getVal(b, sortBy);
@@ -227,6 +227,36 @@ const ProjectsContent: React.FC = () => {
 
   const handleProjectUpdated = (updated: Project) => {
     setProjects(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated } : p));
+  };
+
+  const handleCloseProject = async (p: Project) => {
+    const sKey = statusKey(p);
+    if (sKey === 'completed') return;
+
+    const tasksCount = p.tasksCount ?? (p.tasks?.length ?? 0);
+    const openTasks = p.openTasksCount ?? (tasksCount > 0 ? tasksCount : 0); // fallback
+
+    // If no tasks OR no open tasks -> close silently (no prompts)
+    if (tasksCount === 0 || openTasks === 0) {
+      try {
+        await ProjectService.closeProject(p.id);
+        setProjects(prev => prev.map(x => x.id === p.id ? { ...x, status: 'completed' } as Project : x));
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || err?.message || 'Failed to close project';
+        setError(msg);
+      }
+      return;
+    }
+
+    // There are open tasks -> confirm before attempting
+    if (!window.confirm(`This project has ${openTasks} open task(s). You can only close a project when all tasks are completed. Do you want to try closing anyway?`)) return;
+    try {
+      await ProjectService.closeProject(p.id);
+      setProjects(prev => prev.map(x => x.id === p.id ? { ...x, status: 'completed' } as Project : x));
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to close project';
+      setError(msg);
+    }
   };
 
   return (
@@ -342,8 +372,8 @@ const ProjectsContent: React.FC = () => {
               </thead>
               <tbody>
                 {paged.map(p => {
-                  const members = p.teamMembers?.length ?? 0;
-                  const tasks = p.tasks?.length ?? 0;
+                  const members = p.membersCount ?? (p.teamMembers?.length ?? 0);
+                  const tasks = p.tasksCount ?? (p.tasks?.length ?? 0);
                   const sKey = statusKey(p);
                   return (
                     <tr key={p.id}>
@@ -363,6 +393,9 @@ const ProjectsContent: React.FC = () => {
                         <div className="actions">
                           <button className="icon-btn" title="View" onClick={()=>setViewProject(p)}><i className="fas fa-eye"/></button>
                           <button className="icon-btn" title="Edit" onClick={()=>setEditProject(p)}><i className="fas fa-edit"/></button>
+                          <button className="icon-btn" title="Close Project" onClick={()=>handleCloseProject(p)} disabled={statusKey(p)==='completed'}>
+                            <i className="fas fa-check-circle"/>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -384,8 +417,8 @@ const ProjectsContent: React.FC = () => {
       ) : (
         <div className="grid">
           {filtered.map(p => {
-            const members = p.teamMembers?.length ?? 0;
-            const tasks = p.tasks?.length ?? 0;
+            const members = p.membersCount ?? (p.teamMembers?.length ?? 0);
+            const tasks = p.tasksCount ?? (p.tasks?.length ?? 0);
             const sKey = statusKey(p);
             return (
               <div className="card" key={p.id}>
@@ -402,6 +435,9 @@ const ProjectsContent: React.FC = () => {
                   <div className="actions">
                     <button className="icon-btn" title="View" onClick={()=>setViewProject(p)}><i className="fas fa-eye"/></button>
                     <button className="icon-btn" title="Edit" onClick={()=>setEditProject(p)}><i className="fas fa-edit"/></button>
+                    <button className="icon-btn" title="Close Project" onClick={()=>handleCloseProject(p)} disabled={statusKey(p)==='completed'}>
+                      <i className="fas fa-check-circle"/>
+                    </button>
                   </div>
                 </div>
                 {p.description ? <div className="text-muted small">{p.description.length>90? p.description.slice(0,90)+'…': p.description}</div> : null}

@@ -13,6 +13,7 @@ router.get('/managers', projectController.getManagers);
 router.get('/users', projectController.getUsers);
 router.post('/', projectController.createProject);
 router.get('/:id', projectController.getProject);
+router.get('/:id/performance', projectController.getProjectPerformance);
 router.put('/:id', projectController.updateProject);
 router.put('/:id/details', projectController.updateProjectDetails);
 router.post('/:id/upload', projectController.uploadProjectFiles);
