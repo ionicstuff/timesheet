@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ClientService, { Client } from '../services/client.service';
 import EditClientModal from './EditClientModal';
+import AddClientModal from './AddClientModal';
+import ViewClientModal from './ViewClientModal';
 
 // ---- Light, self-contained styles (kept inline like your current file) ----
 const style = document.createElement('style');
@@ -89,12 +91,15 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+const DEFAULT_INDUSTRIES = [
+  'Software', 'IT Services', 'Finance', 'Healthcare', 'Retail', 'Manufacturing', 'Media', 'Education', 'Real Estate', 'Other'
+];
+
 // ---- Component ----
-interface ClientsProps { onNavigateToOnboard: () => void; }
 
 type SortKey = 'clientName' | 'clientCode' | 'companyName' | 'createdAt' | 'status' | 'projects';
 
-const Clients: React.FC<ClientsProps> = ({ onNavigateToOnboard }) => {
+const Clients: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +111,15 @@ const Clients: React.FC<ClientsProps> = ({ onNavigateToOnboard }) => {
 
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState(10);
+
+  // Filters
+  const [industries, setIndustries] = useState<string[]>([]);
+  const [selectedIndustry, setSelectedIndustry] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+
+  // Modals
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [viewClient, setViewClient] = useState<Client | null>(null);
 
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -119,31 +133,49 @@ const Clients: React.FC<ClientsProps> = ({ onNavigateToOnboard }) => {
         .join(' ')
     : '';
 
-  useEffect(() => {
+useEffect(() => {
     (async () => {
       try {
-        const data = await ClientService.getUserClients();
-        setClients(Array.isArray(data) ? data : []);
+        // Load industries once
+        const inds = await ClientService.getIndustries();
+        const arr = Array.isArray(inds) ? inds : [];
+        setIndustries(arr.length ? arr : DEFAULT_INDUSTRIES);
+      } catch (e) {
+        // non-blocking: fall back to default categories
+        setIndustries(DEFAULT_INDUSTRIES);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const data = await ClientService.getUserClients({
+          search: q || undefined,
+          industry: selectedIndustry || undefined,
+          status: selectedStatus || undefined,
+        });
+        const asArray = Array.isArray(data) ? data : [];
+        setClients(asArray);
+        // Fallback: if industries list is empty, derive from fetched clients
+        if (!industries.length) {
+          const fromClients = Array.from(new Set(asArray.map(c => c.industry).filter(Boolean))) as string[];
+          if (fromClients.length) setIndustries(fromClients);
+        }
+        setError(null);
       } catch (e) {
         setError('Error fetching clients. Please try again later.');
         console.error(e);
       } finally {
         setIsLoading(false);
       }
-    })();
-  }, []);
+    };
+    load();
+  }, [q, selectedIndustry, selectedStatus]);
 
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    const base = term
-      ? clients.filter(c =>
-          [c.clientName, c.clientCode, c.companyName]
-            .filter(Boolean)
-            .some(v => String(v).toLowerCase().includes(term))
-        )
-      : clients;
-
-    const sorted = [...base].sort((a, b) => {
+const filtered = useMemo(() => {
+    const sorted = [...clients].sort((a, b) => {
       const dir = sortDir === 'asc' ? 1 : -1;
 
       const getVal = (c: Client, key: SortKey) => {
@@ -161,7 +193,7 @@ const Clients: React.FC<ClientsProps> = ({ onNavigateToOnboard }) => {
     });
 
     return sorted;
-  }, [clients, q, sortBy, sortDir]);
+  }, [clients, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / rows));
   const pageSafe = Math.min(page, totalPages);
@@ -216,6 +248,31 @@ const Clients: React.FC<ClientsProps> = ({ onNavigateToOnboard }) => {
       onChange={(e) => { setQ(e.target.value); setPage?.(1); }}
     />
 
+    <select
+      className="form-select"
+      value={selectedIndustry}
+      onChange={(e)=>{ setSelectedIndustry(e.target.value); setPage(1); }}
+      style={{ width: 180 }}
+      aria-label="Filter by industry"
+    >
+      <option value="">All Industries</option>
+      {industries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+    </select>
+
+    <select
+      className="form-select"
+      value={selectedStatus}
+      onChange={(e)=>{ setSelectedStatus(e.target.value); setPage(1); }}
+      style={{ width: 160 }}
+      aria-label="Filter by status"
+    >
+      <option value="">All Status</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+      <option value="prospect">Prospect</option>
+      <option value="closed">Closed</option>
+    </select>
+
     <div className="toggle-group" role="tablist" aria-label="View switch">
       <button
         className={`toggle-btn ${view === 'table' ? 'active' : ''}`}
@@ -233,7 +290,7 @@ const Clients: React.FC<ClientsProps> = ({ onNavigateToOnboard }) => {
       </button>
     </div>
 
-    <button className="add-btn" onClick={onNavigateToOnboard}>
+    <button className="add-btn" onClick={()=>setShowAddModal(true)}>
       <i className="fas fa-plus" /> Add New Client
     </button>
   </div>
@@ -279,7 +336,7 @@ const Clients: React.FC<ClientsProps> = ({ onNavigateToOnboard }) => {
                     </td>
                     <td>
                       <div className="actions">
-                        <button className="icon-btn" title="View"><i className="fas fa-eye"/></button>
+                        <button className="icon-btn" title="View" onClick={() => setViewClient(c)}><i className="fas fa-eye"/></button>
                         <button className="icon-btn" title="Edit" onClick={() => handleEditClient(c)}><i className="fas fa-edit"/></button>
                       </div>
                     </td>
@@ -316,7 +373,7 @@ const Clients: React.FC<ClientsProps> = ({ onNavigateToOnboard }) => {
               <div className="d-flex justify-content-between align-items-center mt-2">
                 <span className="projects-pill">{c.projects?.length ?? 0} Projects</span>
                 <div className="actions">
-                  <button className="icon-btn" title="View"><i className="fas fa-eye"/></button>
+                  <button className="icon-btn" title="View" onClick={() => setViewClient(c)}><i className="fas fa-eye"/></button>
                   <button className="icon-btn" title="Edit" onClick={() => handleEditClient(c)}><i className="fas fa-edit"/></button>
                 </div>
               </div>
@@ -333,6 +390,36 @@ const Clients: React.FC<ClientsProps> = ({ onNavigateToOnboard }) => {
         onClose={handleCloseEditModal}
         onClientUpdated={handleClientUpdated}
       />
+
+      {/* Add Client Modal */}
+      <AddClientModal
+        isOpen={showAddModal}
+        onClose={()=>setShowAddModal(false)}
+        onCreated={async ()=>{
+          // Reload list with current filters after create
+          try {
+            setIsLoading(true);
+            const data = await ClientService.getUserClients({
+              search: q || undefined,
+              industry: selectedIndustry || undefined,
+              status: selectedStatus || undefined,
+            });
+            const asArray = Array.isArray(data) ? data : [];
+            setClients(asArray);
+            if (!industries.length) {
+              const fromClients = Array.from(new Set(asArray.map(c => c.industry).filter(Boolean))) as string[];
+              if (fromClients.length) setIndustries(fromClients);
+            }
+          } catch (e) {
+            // keep previous list if error
+          } finally {
+            setIsLoading(false);
+          }
+        }}
+      />
+
+      {/* View Client Modal */}
+      <ViewClientModal client={viewClient} isOpen={!!viewClient} onClose={()=>setViewClient(null)} />
     </div>
   );
 };

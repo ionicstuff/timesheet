@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ProjectService, { Project } from '../services/project.service';
-import axios from 'axios';
-import SpocService from '../services/spoc.service';
 import ViewProjectModal from './projects/ViewProjectModal';
 import EditProjectModal from './projects/EditProjectModal';
+import AddProjectModal from './projects/AddProjectModal';
 
 // Styles aligned with Clients list for consistency
 const style = document.createElement('style');
@@ -65,9 +64,7 @@ type SortKey = 'projectName' | 'projectCode' | 'clientName' | 'createdAt' | 'sta
 
 const ProjectsContent: React.FC = () => {
 
-// Tabs
-  const [activeTab, setActiveTab] = useState<'existing'|'create'>('existing');
-  // Data
+// Data
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,18 +80,9 @@ const ProjectsContent: React.FC = () => {
 // Modals
   const [viewProject, setViewProject] = useState<Project | null>(null);
   const [editProject, setEditProject] = useState<Project | null>(null);
+  const [showAddProject, setShowAddProject] = useState(false);
 
-  // Create form state (simple)
-  const [clients, setClients] = useState<Array<{id:number; clientName:string; spocs?: Array<{id:number; name:string; email:string}>}>>([]);
-  const [spocs, setSpocs] = useState<Array<{id:number; name:string; email:string}>>([]);
-  const [newProject, setNewProject] = useState({ name:'', clientId:0, spocId:0, endDate:'', briefReceivedOn:'', estimatedTime:'' });
-  const [isCreating, setIsCreating] = useState(false);
-
-  // Quick-add modals
-  const [showAddClient, setShowAddClient] = useState(false);
-  const [showAddSpoc, setShowAddSpoc] = useState(false);
-  const [quickClientName, setQuickClientName] = useState('');
-  const [quickSpoc, setQuickSpoc] = useState({ name:'', email:'' });
+  // (No create form state here; creation happens in AddProjectModal)
 
   useEffect(() => {
     (async () => {
@@ -110,61 +98,9 @@ const ProjectsContent: React.FC = () => {
     })();
   }, []);
 
-  // Load clients for create tab
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const resp = await axios.get('http://localhost:3000/api/client-management/all', { headers: { Authorization: `Bearer ${token}` }});
-        setClients(resp.data.data || []);
-      } catch (e) {
-        console.error('Error fetching clients', e);
-      }
-    };
-    if (activeTab === 'create') load();
-  }, [activeTab]);
+// (Clients for create form are now loaded inside AddProjectModal when it opens)
 
-  const handleClientChange = (clientId: number) => {
-    setNewProject(prev => ({ ...prev, clientId, spocId: 0 }));
-    const c = clients.find(x => x.id === clientId);
-    const fromClient = c?.spocs || [];
-    setSpocs(fromClient);
-    // As a fallback, fetch fresh from API in case list is stale
-    if (clientId && !fromClient.length) {
-      SpocService.getByClient(clientId).then(setSpocs).catch(() => {});
-    }
-  };
 
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsCreating(true);
-    try {
-      await ProjectService.createProject({
-        name: newProject.name,
-        clientId: newProject.clientId,
-        // @ts-ignore (backend optional)
-        spocId: newProject.spocId || undefined,
-        // @ts-ignore
-        endDate: newProject.endDate || undefined,
-        // @ts-ignore
-        briefReceivedOn: newProject.briefReceivedOn || undefined,
-        // @ts-ignore
-        estimatedTime: newProject.estimatedTime ? Number(newProject.estimatedTime) : undefined,
-      } as any);
-      setNewProject({ name:'', clientId:0, spocId:0, endDate:'', briefReceivedOn:'', estimatedTime:'' });
-      setSpocs([]);
-      setActiveTab('existing');
-      // refresh list
-      setIsLoading(true);
-      const data = await ProjectService.getProjects();
-      setProjects(Array.isArray(data)?data:[]);
-    } catch (e:any) {
-      setError(e?.message || 'Error creating project');
-    } finally {
-      setIsCreating(false);
-      setIsLoading(false);
-    }
-  };
 
   const statusKey = (p: Project): string => {
     const s = (p.status || (p.isActive ? 'active' : 'archived')).toString().toLowerCase();
@@ -264,87 +200,16 @@ const ProjectsContent: React.FC = () => {
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2 className="fw-bold" style={{ color: 'var(--text-primary)' }}>Projects</h2>
         <div className="toolbar">
-          {activeTab === 'existing' && (
-            <>
-              <input className="search-input" placeholder="Search projects…" value={q} onChange={(e)=>{ setQ(e.target.value); setPage(1); }} />
-              <div className="toggle-group" role="tablist" aria-label="View switch">
-                <button className={`toggle-btn ${view==='table'?'active':''}`} onClick={()=>setView('table')} title="Table view">Table</button>
-                <button className={`toggle-btn ${view==='grid'?'active':''}`} onClick={()=>setView('grid')} title="Grid view">Grid</button>
-              </div>
-            </>
-          )}
-          <button className="add-btn" onClick={()=>setActiveTab('create')}><i className="fas fa-plus"/> Add New Project</button>
-        </div>
-      </div>
-
-      <div className="tabs">
-        <button className={`tab ${activeTab==='existing'?'active':''}`} onClick={()=>setActiveTab('existing')}>Existing Projects</button>
-        <button className={`tab ${activeTab==='create'?'active':''}`} onClick={()=>setActiveTab('create')}>Create New Project</button>
-      </div>
-
-      {activeTab === 'create' ? (
-        <div className="card border-0" style={{ background:'var(--card-bg)', border:'1px solid var(--border-color)', borderRadius:12, maxWidth:'640px', margin:'0 auto' }}>
-          <div className="card-body">
-            <h5 className="card-title fw-bold" style={{ color: 'var(--text-primary)', textAlign:'center', marginBottom:'12px' }}>
-              <i className="fas fa-plus-circle me-2" style={{ color: 'var(--accent-blue)' }}></i>
-              Create New Project
-            </h5>
-            <form onSubmit={handleCreateProject} style={{ marginTop:'12px' }}>
-              <div className="mb-3">
-                <label className="form-label">Project Name</label>
-                <input type="text" className="form-control" value={newProject.name} onChange={(e)=>setNewProject(prev=>({ ...prev, name:e.target.value }))} required />
-              </div>
-              <div className="mb-3">
-                <div className="field-inline">
-                  <label className="form-label mb-0">Client</label>
-                  <button type="button" className="inline-add" onClick={()=>setShowAddClient(true)} title="Quick add client">
-                    <i className="fas fa-plus"/> Add
-                  </button>
-                </div>
-                <select className="form-select" value={newProject.clientId} onChange={(e)=>handleClientChange(Number(e.target.value))} required>
-                  <option value={0} disabled>Select Client</option>
-                  {clients.map(c=> <option key={c.id} value={c.id}>{c.clientName}</option>)}
-                </select>
-              </div>
-              <div className="mb-3">
-                <div className="field-inline">
-                  <label className="form-label mb-0">Client SPOC</label>
-                  <button type="button" className="inline-add" onClick={()=>setShowAddSpoc(true)} disabled={!newProject.clientId} title="Quick add SPOC">
-                    <i className="fas fa-plus"/> Add
-                  </button>
-                </div>
-                <select className="form-select" value={newProject.spocId} onChange={(e)=>setNewProject(prev=>({ ...prev, spocId:Number(e.target.value) }))} disabled={!spocs.length}>
-                  <option value={0} disabled>Select Client SPOC</option>
-                  {spocs.map(s=> <option key={s.id} value={s.id}>{s.name} ({s.email})</option>)}
-                </select>
-              </div>
-              <div className="row g-3">
-                <div className="col-md-4">
-                  <label className="form-label">Delivery Date</label>
-                  <input type="date" className="form-control" value={newProject.endDate} onChange={(e)=>setNewProject(prev=>({ ...prev, endDate:e.target.value }))} />
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label">Brief Received On</label>
-                  <input type="date" className="form-control" value={newProject.briefReceivedOn} onChange={(e)=>setNewProject(prev=>({ ...prev, briefReceivedOn:e.target.value }))} />
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label">Estimated Time (hrs)</label>
-                  <input type="number" className="form-control" value={newProject.estimatedTime} onChange={(e)=>setNewProject(prev=>({ ...prev, estimatedTime:e.target.value }))} />
-                </div>
-              </div>
-              <div className="d-grid gap-2 mt-3">
-                <button type="submit" className="btn btn-primary" disabled={isCreating}>
-                  {isCreating ? (<><span className="spinner-border spinner-border-sm me-2" role="status"></span>Creating...</>) : (<> <i className="fas fa-plus me-2"></i> Create Project </>)}
-                </button>
-                <button type="button" className="btn btn-outline-secondary" onClick={()=>setActiveTab('existing')} disabled={isCreating}>
-                  <i className="fas fa-times me-2"></i>
-                  Cancel
-                </button>
-              </div>
-            </form>
+          <input className="search-input" placeholder="Search projects…" value={q} onChange={(e)=>{ setQ(e.target.value); setPage(1); }} />
+          <div className="toggle-group" role="tablist" aria-label="View switch">
+            <button className={`toggle-btn ${view==='table'?'active':''}`} onClick={()=>setView('table')} title="Table view">Table</button>
+            <button className={`toggle-btn ${view==='grid'?'active':''}`} onClick={()=>setView('grid')} title="Grid view">Grid</button>
           </div>
+          <button className="add-btn" onClick={()=>setShowAddProject(true)}><i className="fas fa-plus"/> Add New Project</button>
         </div>
-) : isLoading ? (
+      </div>
+
+      {isLoading ? (
         <div className="text-center">
           <div className="spinner-border" role="status">
             <span className="visually-hidden">Loading...</span>
@@ -450,67 +315,20 @@ const ProjectsContent: React.FC = () => {
       <ViewProjectModal project={viewProject} isOpen={!!viewProject} onClose={()=>setViewProject(null)} />
       <EditProjectModal project={editProject} isOpen={!!editProject} onClose={()=>setEditProject(null)} onProjectUpdated={handleProjectUpdated} />
 
-      {/* Quick Add Client Modal */}
-      {showAddClient && (
-        <div className="modal-overlay" role="dialog" aria-modal="true">
-          <div className="modal-card">
-            <div className="modal-header">
-              <h5 className="modal-title">Add Client</h5>
-              <button type="button" className="btn-close" onClick={() => setShowAddClient(false)} aria-label="Close" />
-            </div>
-            <div className="modal-body">
-              <label className="form-label">Client Name</label>
-              <input className="form-control" value={quickClientName} onChange={(e)=>setQuickClientName(e.target.value)} placeholder="Enter client name" />
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-outline-secondary" onClick={() => setShowAddClient(false)}>Cancel</button>
-              <button className="btn btn-primary" disabled={!quickClientName.trim()} onClick={async()=>{
-                try{
-                  const created:any = await (await import('../services/client.service')).default.createClient({ clientName: quickClientName.trim() });
-                  setClients(prev=>[...prev, created]);
-                  setQuickClientName('');
-                  setShowAddClient(false);
-                }catch(e){ console.error(e); }
-              }}>Save</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Add SPOC Modal */}
-      {showAddSpoc && (
-        <div className="modal-overlay" role="dialog" aria-modal="true">
-          <div className="modal-card">
-            <div className="modal-header">
-              <h5 className="modal-title">Add Client SPOC</h5>
-              <button type="button" className="btn-close" onClick={() => setShowAddSpoc(false)} aria-label="Close" />
-            </div>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label className="form-label">Name</label>
-                <input className="form-control" value={quickSpoc.name} onChange={(e)=>setQuickSpoc(v=>({...v, name:e.target.value}))} />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Email</label>
-                <input className="form-control" type="email" value={quickSpoc.email} onChange={(e)=>setQuickSpoc(v=>({...v, email:e.target.value}))} />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-outline-secondary" onClick={() => setShowAddSpoc(false)}>Cancel</button>
-              <button className="btn btn-primary" disabled={!quickSpoc.name.trim()||!quickSpoc.email.trim()||!newProject.clientId} onClick={async()=>{
-                try{
-                  const created = await SpocService.create({ name: quickSpoc.name.trim(), email: quickSpoc.email.trim(), clientId: newProject.clientId });
-                  const fresh = await SpocService.getByClient(newProject.clientId);
-                  setSpocs(fresh);
-                  setNewProject(prev=>({...prev, spocId: created.id }));
-                  setQuickSpoc({name:'', email:''});
-                  setShowAddSpoc(false);
-                }catch(e){ console.error(e); }
-              }}>Save</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AddProjectModal
+        isOpen={showAddProject}
+        onClose={()=>setShowAddProject(false)}
+        onCreated={async()=>{
+          try{
+            setIsLoading(true);
+            const data = await ProjectService.getProjects();
+            setProjects(Array.isArray(data) ? data : []);
+          } finally {
+            setIsLoading(false);
+            setShowAddProject(false);
+          }
+        }}
+      />
     </div>
   );
 };

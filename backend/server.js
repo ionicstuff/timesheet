@@ -67,6 +67,7 @@ app.use('/api/client-management', require('./routes/clientRoutes'));
 app.use('/api/spocs', require('./routes/spocRoutes'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
 app.use('/api/admin', require('./admin/routes/admin'));
+app.use('/api/finance', require('./routes/financeRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

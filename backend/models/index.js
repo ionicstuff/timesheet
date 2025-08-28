@@ -9,6 +9,9 @@ const Client = require('./Client');
 const Project = require('./Project');
 const Spoc = require('./Spoc');
 const Task = require('./Task');
+const Invoice = require('./Invoice');
+const InvoiceItem = require('./InvoiceItem');
+const InvoiceRevision = require('./InvoiceRevision');
 
 const TimesheetEntry = require('./TimesheetEntry');
 Timesheet.hasMany(TimesheetEntry, { foreignKey: 'timesheetId', as: 'entries' });
@@ -143,6 +146,14 @@ Project.belongsTo(Spoc, {
   as: 'spoc'
 });
 
+// Invoice associations
+Project.hasOne(Invoice, { foreignKey: 'projectId', as: 'invoice' });
+Invoice.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+Invoice.hasMany(InvoiceItem, { foreignKey: 'invoiceId', as: 'items' });
+InvoiceItem.belongsTo(Invoice, { foreignKey: 'invoiceId', as: 'invoice' });
+Invoice.hasMany(InvoiceRevision, { foreignKey: 'invoiceId', as: 'revisions' });
+InvoiceRevision.belongsTo(Invoice, { foreignKey: 'invoiceId', as: 'invoice' });
+
 // SPOC associations
 Spoc.belongsTo(Client, {
   foreignKey: 'clientId',
@@ -218,5 +229,8 @@ module.exports = {
   Project,
   Spoc,
   Task,
-  TimesheetEntry
+  TimesheetEntry,
+  Invoice,
+  InvoiceItem,
+  InvoiceRevision
 };

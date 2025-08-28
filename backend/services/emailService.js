@@ -6,6 +6,22 @@ class EmailService {
     this.init();
   }
 
+  async getFinanceEmails() {
+    try {
+      const sequelize = require('../config/database');
+      const [rows] = await sequelize.query(`
+        SELECT u.email
+        FROM users u
+        JOIN role_masters rm ON u.role_id = rm.id
+        WHERE u.is_active = true AND LOWER(rm.role_name) = 'finance'
+      `);
+      return (rows || []).map(r => r.email).filter(Boolean);
+    } catch (e) {
+      console.error('Failed to fetch finance emails', e);
+      return [];
+    }
+  }
+
   async init() {
     // Create transporter based on environment
     if (process.env.NODE_ENV === 'production') {
@@ -200,6 +216,63 @@ class EmailService {
       });
     } catch (err) {
       console.error('Failed to send project closed email', err);
+    }
+  }
+
+  async sendInvoiceGeneratedEmail(invoice, project, client) {
+    try {
+      const toList = await this.getFinanceEmails();
+      if (!toList.length) return;
+      const subject = `Invoice generated: ${invoice.invoiceNumber} for ${project.projectName || project.id}`;
+      const html = `
+        <p>Hello Finance,</p>
+        <p>An invoice has been generated.</p>
+        <ul>
+          <li>Invoice: <strong>${invoice.invoiceNumber}</strong> (v${invoice.version})</li>
+          <li>Project: ${project.projectName || project.id}</li>
+          <li>Client: ${client?.clientName || client?.companyName || client?.id || ''}</li>
+          <li>Total: 0.00</li>
+          <li>Issue Date: ${invoice.issueDate}</li>
+          <li>Due Date: ${invoice.dueDate}</li>
+        </ul>
+        <p>Review in the app and approve/send when ready.</p>
+      `;
+      await this.transporter.sendMail({
+        from: `"TimeSheet Pro" <${process.env.EMAIL_FROM || 'noreply@timesheet.com'}>`,
+        to: toList.join(','),
+        subject,
+        html
+      });
+    } catch (err) {
+      console.error('Failed to send invoice generated email', err);
+    }
+  }
+
+  async sendInvoiceToClient(toEmail, context, pdfFullPath) {
+    try {
+      if (!toEmail) return;
+      const subject = `Invoice for ${context.project_name || 'your project'}`;
+      const html = `
+        <p>Hello,</p>
+        <p>Please find attached the invoice for project <strong>${context.project_name || ''}</strong>.</p>
+        <p>Regards,<br/>TimeSheet Pro</p>
+      `;
+      await this.transporter.sendMail({
+        from: `"TimeSheet Pro" <${process.env.EMAIL_FROM || 'noreply@timesheet.com'}>`,
+        to: toEmail,
+        subject,
+        html,
+        attachments: [
+          {
+            filename: (pdfFullPath.split(/[\\/]/).pop()) || 'invoice.pdf',
+            path: pdfFullPath,
+            contentType: 'application/pdf'
+          }
+        ]
+      });
+    } catch (err) {
+      console.error('Failed to send invoice to client', err);
+      throw err;
     }
   }
 }

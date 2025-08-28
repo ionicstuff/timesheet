@@ -8,12 +8,12 @@ import TimesheetService, {
 } from "../services/timesheet.service";
 import taskService, { Task as UiTask } from "../services/task.service";
 import Clients from "./Clients";
-import OnboardClient from "./OnboardClient";
 import ProjectsContent from "./ProjectsContent";
 import Profile from "./Profile";
 
 import TimesheetView from "./timesheet/TimesheetView"; // NEW
 import MyTasks from "./tasks/MyTasks";
+import RunningTaskTicker from "./tasks/RunningTaskTicker";
 
 const Dashboard: React.FC = () => {
   // Apply dark theme styles
@@ -65,7 +65,6 @@ const Dashboard: React.FC = () => {
     | "dashboard"
     | "profile"
     | "clients"
-    | "onboardClient"
     | "projects"
     | "timesheet"
   | "tasks"
@@ -366,7 +365,7 @@ const Dashboard: React.FC = () => {
       }
     >
       {/* Sidebar */}
-      <div className="shadow-lg" style={sidebarStyle}>
+      <div className="shadow-lg" style={{ ...sidebarStyle, position: 'relative', paddingBottom: '80px' }}>
         <div className="p-2">
           {/* Logo and Company */}
           <div className="d-flex align-items-center mb-4 pb-3 border-bottom border-light border-opacity-25">
@@ -733,6 +732,7 @@ const Dashboard: React.FC = () => {
             </li>
           </ul>
         </div>
+        <RunningTaskTicker />
       </div>
 
       {/* Main Content */}
@@ -755,8 +755,6 @@ const Dashboard: React.FC = () => {
                   ? "My Profile"
                   : currentView === "clients"
                   ? "Client Management"
-                  : currentView === "onboardClient"
-                  ? "Client Onboarding"
                   : currentView === "projects"
                   ? "Project Management"
                   : currentView === "timesheet"
@@ -1489,14 +1487,7 @@ const Dashboard: React.FC = () => {
           <Profile />
         ) : currentView === "clients" ? (
           // Clients View
-          <Clients
-            onNavigateToOnboard={() => setCurrentView("onboardClient")}
-          />
-        ) : currentView === "onboardClient" ? (
-          // Onboard Client View
-          <OnboardClient
-            onNavigateToClients={() => setCurrentView("clients")}
-          />
+          <Clients />
         ) : currentView === "timesheet" ? (
           // Timesheet View
           <TimesheetView />

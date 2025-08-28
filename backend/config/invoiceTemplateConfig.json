@@ -1,0 +1,13 @@
+{
+  "page": 0,
+  "fields": {
+    "invoiceNumber": { "x": 430, "y": 740, "size": 12 },
+    "issueDate": { "x": 430, "y": 720, "size": 12 },
+    "dueDate": { "x": 430, "y": 700, "size": 12 },
+    "clientName": { "x": 60, "y": 700, "size": 12 },
+    "clientEmail": { "x": 60, "y": 682, "size": 12 },
+    "projectName": { "x": 60, "y": 664, "size": 12 },
+    "total": { "x": 470, "y": 120, "size": 14 },
+    "notes": { "x": 60, "y": 600, "size": 10 }
+  }
+}
