@@ -73,7 +73,7 @@ export default function DashboardNew() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Heading */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -91,7 +91,7 @@ export default function DashboardNew() {
         {/* Quick Actions */}
         <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
           <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <QuickAction icon={<Plus className="h-4 w-4" />} title="Create Task" subtitle="Add a new task to your list" />
             <QuickAction icon={<CalendarIcon className="h-4 w-4" />} title="Schedule Event" subtitle="Plan a meeting or event" />
             <QuickAction icon={<FileText className="h-4 w-4" />} title="New Document" subtitle="Create a new document" />

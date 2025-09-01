@@ -2,16 +2,16 @@ import React, { useState, useRef, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Button from '../ui/Button'
-import { Menu, Search, Plus, Sun, Moon, Clock as ClockIcon } from 'lucide-react'
+import { Menu, Search, Plus, Sun, Moon, Clock as ClockIcon, Home, Folder, Building2, ListChecks } from 'lucide-react'
 
-interface NavItem { label: string; to: string; icon: string }
+interface NavItem { label: string; to: string; icon: React.ReactNode }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', to: '/app/dashboard', icon: 'fa-home' },
-  { label: 'Projects', to: '/projects', icon: 'fa-project-diagram' },
-  { label: 'Clients', to: '/clients', icon: 'fa-building' },
-  { label: 'My Tasks', to: '/tasks', icon: 'fa-tasks' },
-  { label: 'Timesheet', to: '/timesheet/view', icon: 'fa-clock' },
+  { label: 'Dashboard', to: '/app/dashboard', icon: <Home className="h-4 w-4" /> },
+  { label: 'Projects', to: '/projects', icon: <Folder className="h-4 w-4" /> },
+  { label: 'Clients', to: '/clients', icon: <Building2 className="h-4 w-4" /> },
+  { label: 'My Tasks', to: '/tasks', icon: <ListChecks className="h-4 w-4" /> },
+  { label: 'Timesheet', to: '/timesheet/view', icon: <ClockIcon className="h-4 w-4" /> },
 ]
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -116,7 +116,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   'flex items-center gap-3 rounded-md px-3 py-2 text-sm',
                   isActive ? 'bg-[var(--secondary-bg)] text-foreground shadow-inner' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
                 ].join(' ')}>
-                  <i className={`fas ${item.icon} w-4`} />
+                  <span className="text-muted-foreground">{item.icon}</span>
                   <span>{item.label}</span>
                 </NavLink>
               ))}
