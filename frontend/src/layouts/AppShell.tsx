@@ -64,8 +64,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Center search */}
-          <div className="hidden md:flex items-center mx-4 flex-1">
-            <div className="relative w-full">
+          <div className="hidden md:flex items-center mx-4 flex-1 justify-center">
+            <div className="relative w-full max-w-[520px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 className="w-full h-9 rounded-md bg-background border border-[var(--border-color)] pl-9 pr-3 text-sm placeholder:text-muted-foreground"
@@ -75,6 +75,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" className="w-9 h-9 p-0 hidden sm:inline-flex" title="Timer">
+              <ClockIcon className="h-4 w-4" />
+            </Button>
             <Button size="sm" className="hidden sm:inline-flex"><Plus className="mr-2 h-4 w-4" /> New Task</Button>
             <Button variant="outline" size="sm" onClick={toggleTheme} title={isDark ? 'Switch to light' : 'Switch to dark'}>
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
