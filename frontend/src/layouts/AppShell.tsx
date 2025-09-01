@@ -61,7 +61,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center"><i className="fas fa-clock" /></div>
             <div className="font-semibold">TimeSheet Pro</div>
           </div>
+
+          {/* Center search */}
+          <div className="hidden md:flex items-center mx-4 flex-1">
+            <div className="relative w-full">
+              <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground" />
+              <input
+                className="w-full h-9 rounded-md bg-background border border-[var(--border-color)] pl-8 pr-3 text-sm placeholder:text-muted-foreground"
+                placeholder="Search tasks, projects, docs..."
+              />
+            </div>
+          </div>
+
           <div className="ml-auto flex items-center gap-2">
+            <Button size="sm" className="hidden sm:inline-flex"><i className="fas fa-plus mr-2" /> New</Button>
             <Button variant="outline" size="sm" onClick={toggleTheme} title={isDark ? 'Switch to light' : 'Switch to dark'}>
               <i className={isDark ? 'fas fa-sun' : 'fas fa-moon'} />
             </Button>

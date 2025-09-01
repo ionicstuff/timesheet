@@ -7,6 +7,19 @@ import Card from '../ui/Card'
 import Alert from '../ui/Alert'
 import taskService, { Task as UiTask } from '../services/task.service'
 
+// Local formatting helpers (avoid relying on class static methods)
+const getCurrentTimeStr = () => new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+const formatHours = (h?: number) => (h ? Number(h).toFixed(2) : '0.00')
+const formatTimeHHMM = (t?: string | null) => {
+  if (!t) return '--:--'
+  try {
+    const p = String(t).split(':')
+    return p.length >= 2 ? `${p[0]}:${p[1]}` : String(t)
+  } catch {
+    return '--:--'
+  }
+}
+
 export default function DashboardNew() {
   const { user } = useAuth()
   const [status, setStatus] = useState<TimesheetStatus | null>(null)
@@ -53,10 +66,7 @@ export default function DashboardNew() {
       <div className="space-y-6">
         {/* Heading */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Welcome back, {user?.firstName || 'User'}!</h1>
-            <p className="text-sm text-muted-foreground">Here's what's happening with your timesheet today.</p>
-          </div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
           <div className="text-sm text-muted-foreground hidden md:block">
             <i className="fas fa-calendar mr-2" />
             {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -71,20 +81,33 @@ export default function DashboardNew() {
           <KpiTile title="Pending Approvals" icon="fa-inbox" value="6" color="from-[var(--kpi-amber-1)] to-[var(--kpi-amber-2)]" />
         </div>
 
+        {/* Quick Actions */}
+        <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
+          <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <QuickAction icon="fa-plus" title="Create Task" subtitle="Add a new task to your list" />
+            <QuickAction icon="fa-calendar" title="Schedule Event" subtitle="Plan a meeting or event" />
+            <QuickAction icon="fa-file-alt" title="New Document" subtitle="Create a new document" />
+            <QuickAction icon="fa-user-plus" title="Invite Member" subtitle="Add someone to your team" />
+            <QuickAction icon="fa-paper-plane" title="Send Message" subtitle="Communicate with your team" />
+            <QuickAction icon="fa-chart-line" title="View Reports" subtitle="Check your progress analytics" />
+          </div>
+        </div>
+
         {/* Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2" title="Time Tracking - Today" actions={
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>Current Time: {TimesheetService.getCurrentTime()}</span>
+              <span>Current Time: {getCurrentTimeStr()}</span>
             </div>
           }>
             {status ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 sm:grid-cols-4 text-center gap-4">
-                  <TimeCell label="Clock In" value={status.clockInTime || '--:--'} color={status.clockInTime ? 'text-green-500' : 'text-muted-foreground'} />
-                  <TimeCell label="Clock Out" value={status.clockOutTime || '--:--'} color={status.clockOutTime ? 'text-red-500' : 'text-muted-foreground'} />
-                  <TimeCell label="Total Hours" value={TimesheetService.formatHours(status.totalHours)} color="text-primary" />
-                  <TimeCell label="Required" value={TimesheetService.formatTime('08:00:00')} color="text-yellow-500" />
+                  <TimeCell label="Clock In" value={formatTimeHHMM(status.clockInTime)} color={status.clockInTime ? 'text-green-500' : 'text-muted-foreground'} />
+                  <TimeCell label="Clock Out" value={formatTimeHHMM(status.clockOutTime)} color={status.clockOutTime ? 'text-red-500' : 'text-muted-foreground'} />
+                  <TimeCell label="Total Hours" value={formatHours(status.totalHours)} color="text-primary" />
+                  <TimeCell label="Required" value={formatTimeHHMM('08:00:00')} color="text-yellow-500" />
                 </div>
                 <div className="flex items-center justify-center">
                   <Button onClick={toggleClock} loading={busy} variant={status.status === 'clocked_in' ? 'danger' : 'success'} className="min-w-[140px]">
@@ -156,6 +179,22 @@ function TimeCell({ label, value, color }: { label: string; value: string; color
       <div className={[color || '', 'text-xl font-mono'].join(' ')}>{value}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
     </div>
+  )
+}
+
+function QuickAction({ icon, title, subtitle }: { icon: string; title: string; subtitle: string }) {
+  return (
+    <button className="w-full text-left rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4 hover:bg-white/5 transition-colors">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center">
+          <i className={`fas ${icon}`} />
+        </div>
+        <div>
+          <div className="font-medium">{title}</div>
+          <div className="text-xs text-muted-foreground">{subtitle}</div>
+        </div>
+      </div>
+    </button>
   )
 }
 
