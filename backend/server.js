@@ -41,14 +41,10 @@ const allowedOrigins = (process.env.CORS_ORIGIN || process.env.CORS_ORIGINS || '
   .filter(Boolean);
 const origins = allowedOrigins.length ? allowedOrigins : defaultOrigins;
 
+const isDev = (process.env.NODE_ENV || 'development') !== 'production';
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl) or from whitelisted origins
-    if (!origin || origins.indexOf(origin) !== -1) {
-      return callback(null, true);
-    }
-    return callback(new Error('Not allowed by CORS'));
-  },
+  // In development, reflect the request origin to simplify local testing and avoid surprises.
+  origin: isDev ? true : origins,
   credentials: true,
   methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization','x-auth-token']
