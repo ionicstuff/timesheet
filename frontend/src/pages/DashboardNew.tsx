@@ -6,6 +6,13 @@ import Button from '../ui/Button'
 import Card from '../ui/Card'
 import Alert from '../ui/Alert'
 import taskService, { Task as UiTask } from '../services/task.service'
+import StatsCard from '../components/dashboard/StatsCard'
+import TaskList from '../components/tasks/TaskList'
+import CreateTaskButton from '../components/tasks/CreateTaskButton'
+import RecentActivity from '../components/dashboard/RecentActivity'
+import GoalTracker from '../components/dashboard/GoalTracker'
+import TaskSchedulerWidget from '../components/dashboard/TaskSchedulerWidget'
+import ProductivityInsights from '../components/dashboard/ProductivityInsights'
 
 // Local formatting helpers (avoid relying on class static methods)
 const getCurrentTimeStr = () => new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
@@ -25,13 +32,15 @@ export default function DashboardNew() {
   const [status, setStatus] = useState<TimesheetStatus | null>(null)
   const [busy, setBusy] = useState(false)
   const [recentTasks, setRecentTasks] = useState<UiTask[]>([])
+  const [allTasks, setAllTasks] = useState<UiTask[]>([])
   const [taskBusy, setTaskBusy] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
     TimesheetService.getTimesheetStatus().then(setStatus).catch(() => {})
     taskService.getMyTasks().then((all) => {
-      if (!Array.isArray(all)) { setRecentTasks([]); return }
+      if (!Array.isArray(all)) { setAllTasks([]); setRecentTasks([]); return }
       const safe = all.filter(Boolean)
+      setAllTasks(safe)
       const sorted = [...safe].sort((a: any, b: any) => {
         const tb = new Date((b as any)?.updatedAt || (b as any)?.createdAt || '').getTime() || 0
         const ta = new Date((a as any)?.updatedAt || (a as any)?.createdAt || '').getTime() || 0
@@ -67,18 +76,15 @@ export default function DashboardNew() {
         {/* Heading */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <div className="text-sm text-muted-foreground hidden md:block">
-            <i className="fas fa-calendar mr-2" />
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </div>
+          <CreateTaskButton />
         </div>
 
-        {/* KPI Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <KpiTile title="Hours Today" icon="fa-clock" value={status?.totalHours ? String(status.totalHours) : '0.0'} color="from-[var(--kpi-blue-1)] to-[var(--kpi-blue-2)]" />
-          <KpiTile title="Hours This Week" icon="fa-calendar-week" value="42.5" color="from-[var(--kpi-cyan-1)] to-[var(--kpi-cyan-2)]" />
-          <KpiTile title="Tasks Completed" icon="fa-tasks" value="12" color="from-[var(--kpi-green-1)] to-[var(--kpi-green-2)]" />
-          <KpiTile title="Pending Approvals" icon="fa-inbox" value="6" color="from-[var(--kpi-amber-1)] to-[var(--kpi-amber-2)]" />
+        {/* Stats row similar to reference */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatsCard title="Total Tasks" value={String(allTasks.length || 0)} description="From your workspace" icon={<i className="fas fa-check-circle" />} trend="up" trendValue="+0%" />
+          <StatsCard title="Pending Tasks" value={String(allTasks.filter(t => t.status === 'pending' || t.status === 'in_progress').length || 0)} description="including in-progress" icon={<i className="fas fa-clock" />} />
+          <StatsCard title="Overdue Tasks" value={String(0)} description="Requires attention" icon={<i className="fas fa-exclamation-circle" />} />
+          <StatsCard title="Productivity" value={`${allTasks.length ? Math.round((allTasks.filter(t => t.status === 'completed').length / allTasks.length) * 100) : 0}%`} description="vs recent" icon={<i className="fas fa-trending-up" />} trend="up" trendValue="+0%" />
         </div>
 
         {/* Quick Actions */}
@@ -124,39 +130,36 @@ export default function DashboardNew() {
             )}
           </Card>
 
-          <Card title="Recent Tasks">
-            {recentTasks.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No recent tasks.</div>
-            ) : (
-              <ul className="space-y-3">
-                {recentTasks.map(t => (
-                  <li key={t.id} className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">{t.name}</div>
-                      <div className="text-xs text-muted-foreground">{(t.status || '').replace('_',' ')} · {t.project?.projectCode || t.project?.projectName || `Project #${t.projectId}`}</div>
-                    </div>
-                    <div className="flex gap-2">
-                      {(t.status === 'pending' || t.status === 'paused') && (
-                        <Button variant="success" size="sm" onClick={() => quickStart(t)} loading={!!taskBusy[t.id!]}>Start</Button>
-                      )}
-                      {t.status === 'in_progress' && (
-                        <Button variant="outline" size="sm" onClick={() => quickPause(t)} loading={!!taskBusy[t.id!]}>Pause</Button>
-                      )}
-                      {(t.status === 'in_progress' || t.status === 'paused' || t.status === 'pending') && (
-                        <Button variant="primary" size="sm" onClick={() => quickComplete(t)} loading={!!taskBusy[t.id!]}>Complete</Button>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <Card title="Upcoming Tasks">
+            <TaskList
+              tasks={recentTasks.map(t => ({ id: t.id!, name: t.name || 'Untitled task', projectName: t.project?.projectName || t.project?.projectCode, status: t.status }))}
+            />
           </Card>
+
+          <RecentActivity />
         </div>
+
+        <GoalTracker />
+
+        <TaskSchedulerWidget />
+
+        <ProductivityInsights />
+
+        <Card title="Calendar Overview">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center text-muted-foreground">
+              <i className="fas fa-calendar text-2xl mb-3" />
+              <div className="text-foreground mb-1">No events scheduled</div>
+              <div className="text-sm">Your calendar is empty for the next 7 days</div>
+              <Button className="mt-4" size="sm"><i className="fas fa-plus mr-2"/>Schedule Event</Button>
+            </div>
+          </div>
+        </Card>
+
       </div>
     </AppShell>
   )
 }
-
 function KpiTile({ title, value, icon, color }: { title: string; value: string; icon: string; color: string }) {
   return (
     <div className={`rounded-lg p-4 text-white shadow-md bg-gradient-to-br ${color}`}>
