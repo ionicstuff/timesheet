@@ -270,3 +270,30 @@ select option:checked {
   color: #0f172a !important;
 }
 
+/* === Tailwind-friendly design tokens (aliases) === */
+:root {
+  /* Map generic tokens used in the spec to existing variables */
+  --background: var(--primary-bg);
+  --foreground: var(--text-primary);
+  --muted-foreground: var(--text-secondary);
+  --primary: var(--accent-blue);
+}
+
+[data-theme="light"] {
+  --background: var(--primary-bg);
+  --foreground: var(--text-primary);
+  --muted-foreground: var(--text-secondary);
+  --primary: var(--accent-blue);
+}
+
+@layer utilities {
+  /* Text color utilities */
+  .text-foreground { color: var(--foreground) !important; }
+  .text-muted-foreground { color: var(--muted-foreground) !important; }
+  .text-primary { color: var(--primary) !important; }
+
+  /* Background utilities */
+  .bg-background { background-color: var(--background) !important; }
+  .bg-primary { background-color: var(--primary) !important; }
+}
+
