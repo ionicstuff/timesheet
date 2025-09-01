@@ -13,6 +13,7 @@ import RecentActivity from '../components/dashboard/RecentActivity'
 import GoalTracker from '../components/dashboard/GoalTracker'
 import TaskSchedulerWidget from '../components/dashboard/TaskSchedulerWidget'
 import ProductivityInsights from '../components/dashboard/ProductivityInsights'
+import { CheckCircle, Clock as ClockIcn, AlertCircle, TrendingUp, Calendar as CalendarIcon, UserPlus, FileText, MessageSquare, BarChart2, Plus } from 'lucide-react'
 
 // Local formatting helpers (avoid relying on class static methods)
 const getCurrentTimeStr = () => new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
@@ -81,22 +82,22 @@ export default function DashboardNew() {
 
         {/* Stats row similar to reference */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatsCard title="Total Tasks" value={String(allTasks.length || 0)} description="From your workspace" icon={<i className="fas fa-check-circle" />} trend="up" trendValue="+0%" />
-          <StatsCard title="Pending Tasks" value={String(allTasks.filter(t => t.status === 'pending' || t.status === 'in_progress').length || 0)} description="including in-progress" icon={<i className="fas fa-clock" />} />
-          <StatsCard title="Overdue Tasks" value={String(0)} description="Requires attention" icon={<i className="fas fa-exclamation-circle" />} />
-          <StatsCard title="Productivity" value={`${allTasks.length ? Math.round((allTasks.filter(t => t.status === 'completed').length / allTasks.length) * 100) : 0}%`} description="vs recent" icon={<i className="fas fa-trending-up" />} trend="up" trendValue="+0%" />
+          <StatsCard title="Total Tasks" value={String(allTasks.length || 0)} description="From your workspace" icon={<CheckCircle className="h-4 w-4" />} trend="up" trendValue="+0%" />
+          <StatsCard title="Pending Tasks" value={String(allTasks.filter(t => t.status === 'pending' || t.status === 'in_progress').length || 0)} description="including in-progress" icon={<ClockIcn className="h-4 w-4" />} />
+          <StatsCard title="Overdue Tasks" value={String(0)} description="Requires attention" icon={<AlertCircle className="h-4 w-4" />} />
+          <StatsCard title="Productivity" value={`${allTasks.length ? Math.round((allTasks.filter(t => t.status === 'completed').length / allTasks.length) * 100) : 0}%`} description="vs recent" icon={<TrendingUp className="h-4 w-4" />} trend="up" trendValue="+0%" />
         </div>
 
         {/* Quick Actions */}
         <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4">
           <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <QuickAction icon="fa-plus" title="Create Task" subtitle="Add a new task to your list" />
-            <QuickAction icon="fa-calendar" title="Schedule Event" subtitle="Plan a meeting or event" />
-            <QuickAction icon="fa-file-alt" title="New Document" subtitle="Create a new document" />
-            <QuickAction icon="fa-user-plus" title="Invite Member" subtitle="Add someone to your team" />
-            <QuickAction icon="fa-paper-plane" title="Send Message" subtitle="Communicate with your team" />
-            <QuickAction icon="fa-chart-line" title="View Reports" subtitle="Check your progress analytics" />
+            <QuickAction icon={<Plus className="h-4 w-4" />} title="Create Task" subtitle="Add a new task to your list" />
+            <QuickAction icon={<CalendarIcon className="h-4 w-4" />} title="Schedule Event" subtitle="Plan a meeting or event" />
+            <QuickAction icon={<FileText className="h-4 w-4" />} title="New Document" subtitle="Create a new document" />
+            <QuickAction icon={<UserPlus className="h-4 w-4" />} title="Invite Member" subtitle="Add someone to your team" />
+            <QuickAction icon={<MessageSquare className="h-4 w-4" />} title="Send Message" subtitle="Communicate with your team" />
+            <QuickAction icon={<BarChart2 className="h-4 w-4" />} title="View Reports" subtitle="Check your progress analytics" />
           </div>
         </div>
 
@@ -185,12 +186,12 @@ function TimeCell({ label, value, color }: { label: string; value: string; color
   )
 }
 
-function QuickAction({ icon, title, subtitle }: { icon: string; title: string; subtitle: string }) {
+function QuickAction({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
   return (
     <button className="w-full text-left rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4 hover:bg-white/5 transition-colors">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center">
-          <i className={`fas ${icon}`} />
+          {icon}
         </div>
         <div>
           <div className="font-medium">{title}</div>

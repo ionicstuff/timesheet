@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Button from '../ui/Button'
+import { Menu, Search, Plus, Sun, Moon, Clock as ClockIcon } from 'lucide-react'
 
 interface NavItem { label: string; to: string; icon: string }
 
@@ -55,28 +56,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 bg-[var(--card-bg)] border-b border-[var(--border-color)]">
         <div className="px-4 h-14 flex items-center gap-3">
           <button className="md:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <i className="fas fa-bars" />
+            <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center"><i className="fas fa-clock" /></div>
+            <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center"><ClockIcon className="h-4 w-4" /></div>
             <div className="font-semibold">TimeSheet Pro</div>
           </div>
 
           {/* Center search */}
           <div className="hidden md:flex items-center mx-4 flex-1">
             <div className="relative w-full">
-              <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
-                className="w-full h-9 rounded-md bg-background border border-[var(--border-color)] pl-8 pr-3 text-sm placeholder:text-muted-foreground"
+                className="w-full h-9 rounded-md bg-background border border-[var(--border-color)] pl-9 pr-3 text-sm placeholder:text-muted-foreground"
                 placeholder="Search tasks, projects, docs..."
               />
             </div>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <Button size="sm" className="hidden sm:inline-flex"><i className="fas fa-plus mr-2" /> New</Button>
+            <Button size="sm" className="hidden sm:inline-flex"><Plus className="mr-2 h-4 w-4" /> New Task</Button>
             <Button variant="outline" size="sm" onClick={toggleTheme} title={isDark ? 'Switch to light' : 'Switch to dark'}>
-              <i className={isDark ? 'fas fa-sun' : 'fas fa-moon'} />
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
             <div className="relative" ref={menuRef}>
               <button className="ml-1 flex items-center gap-2" onClick={() => setMenuOpen(!menuOpen)}>
