@@ -33,6 +33,14 @@ function App() {
               }
             />
             <Route
+              path="/app/dashboard"
+              element={
+                <ProtectedRoute>
+                  {React.createElement(require('./pages/DashboardNew').default)}
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/project-details/:projectId"
               element={
                 <ProtectedRoute>
