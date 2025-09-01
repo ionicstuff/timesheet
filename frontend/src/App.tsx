@@ -6,6 +6,7 @@ import Dashboard from "./components/Dashboard";
 import ProjectDetails from "./components/ProjectDetails";
 import ProjectView from "./components/ProjectView";
 import Projects from "./components/Projects";
+import Clients from "./components/Clients";
 import MyTasks from "./components/tasks/MyTasks";
 import AdminLogin from "./admin/components/AdminLogin";
 import AdminDashboard from "./admin/components/AdminDashboard";
@@ -14,6 +15,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import TimesheetView from "./components/timesheet/TimesheetView";
+import DashboardNew from "./pages/DashboardNew";
 
 function App() {
   return (
@@ -36,7 +38,7 @@ function App() {
               path="/app/dashboard"
               element={
                 <ProtectedRoute>
-                  {React.createElement(require('./pages/DashboardNew').default)}
+                  <DashboardNew />
                 </ProtectedRoute>
               }
             />
@@ -69,6 +71,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Projects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clients"
+              element={
+                <ProtectedRoute>
+                  <Clients />
                 </ProtectedRoute>
               }
             />
