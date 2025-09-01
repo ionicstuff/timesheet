@@ -17,9 +17,15 @@ export default function DashboardNew() {
   useEffect(() => {
     TimesheetService.getTimesheetStatus().then(setStatus).catch(() => {})
     taskService.getMyTasks().then((all) => {
-      const sorted = [...all].sort((a: any, b: any) => new Date(b.updatedAt || b.createdAt || '').getTime() - new Date(a.updatedAt || a.createdAt || '').getTime())
+      if (!Array.isArray(all)) { setRecentTasks([]); return }
+      const safe = all.filter(Boolean)
+      const sorted = [...safe].sort((a: any, b: any) => {
+        const tb = new Date((b as any)?.updatedAt || (b as any)?.createdAt || '').getTime() || 0
+        const ta = new Date((a as any)?.updatedAt || (a as any)?.createdAt || '').getTime() || 0
+        return tb - ta
+      })
       setRecentTasks(sorted.slice(0, 5))
-    }).catch(() => {})
+    }).catch(() => { setRecentTasks([]) })
   }, [])
 
   const refreshStatus = async () => {
