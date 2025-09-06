@@ -8,7 +8,7 @@ export default function GoalTracker() {
     { label: 'Code reviews', value: 80 },
   ]
   return (
-    <Card title="Goal Tracker">
+    <Card title="Goal Progress" className="h-full">
       <div className="space-y-3">
         {goals.map((g, i) => (
           <div key={i}>

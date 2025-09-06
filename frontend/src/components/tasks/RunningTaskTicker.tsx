@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import taskService, { Task } from '../../services/task.service';
 import Toast from '../Toast';
+import { Pause, Check } from 'lucide-react';
 
 const formatHMS = (totalSeconds: number) => {
   const s = Math.max(0, Math.floor(totalSeconds));
@@ -154,7 +155,7 @@ const RunningTaskTicker: React.FC = () => {
                 title="Pause task"
                 style={{ ...buttonBase }}
               >
-                {loading ? <span className="spinner-border spinner-border-sm"/> : <i className="fas fa-pause"/>}
+                {loading ? <span className="spinner-border spinner-border-sm"/> : <Pause className="h-4 w-4"/>}
               </button>
               <button
                 disabled={loading}
@@ -162,7 +163,7 @@ const RunningTaskTicker: React.FC = () => {
                 title="Complete task"
                 style={{ ...buttonBase, borderColor: 'var(--accent-blue)', color: 'var(--accent-blue)' }}
               >
-                {loading ? <span className="spinner-border spinner-border-sm"/> : <i className="fas fa-check"/>}
+                {loading ? <span className="spinner-border spinner-border-sm"/> : <Check className="h-4 w-4"/>}
               </button>
             </>
           ) : (

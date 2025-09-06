@@ -10,7 +10,7 @@ interface CardProps {
 export default function Card({ title, actions, children, className = '' }: CardProps) {
   return (
     <div className={[
-      'rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)]',
+      'w-full rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)]',
       'shadow-[0_4px_14px_rgba(0,0,0,0.12)]',
       className
     ].join(' ')}>

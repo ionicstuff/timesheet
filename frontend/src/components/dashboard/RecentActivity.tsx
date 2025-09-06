@@ -9,7 +9,7 @@ export default function RecentActivity() {
     { icon: <CalendarDays className="h-4 w-4" />, title: 'Leave request submitted', sub: '2 days ago' },
   ]
   return (
-    <Card title="Recent Activity">
+    <Card title="Recent Activity" className="h-full">
       <ul className="space-y-3">
         {items.map((it, idx) => (
           <li key={idx} className="flex items-start gap-3">

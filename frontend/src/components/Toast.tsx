@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
 interface ToastProps {
   message: string;
@@ -55,21 +56,21 @@ const Toast: React.FC<ToastProps> = ({
   };
 
   const getIcon = () => {
-    const icons = {
-      success: 'fas fa-check-circle',
-      error: 'fas fa-exclamation-circle',
-      warning: 'fas fa-exclamation-triangle',
-      info: 'fas fa-info-circle',
-    };
+    const iconMap = {
+      success: <CheckCircle className="me-2 h-4 w-4" />,
+      error: <AlertCircle className="me-2 h-4 w-4" />,
+      warning: <AlertTriangle className="me-2 h-4 w-4" />,
+      info: <Info className="me-2 h-4 w-4" />,
+    } as const;
 
-    return icons[type];
+    return iconMap[type];
   };
 
   return (
     <div style={getToastStyle()}>
       <div className="d-flex align-items-center justify-content-between">
         <div className="d-flex align-items-center">
-          <i className={`${getIcon()} me-2`}></i>
+          {getIcon()}
           <span>{message}</span>
         </div>
         <button

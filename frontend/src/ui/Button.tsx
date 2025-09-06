@@ -17,7 +17,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   outline: 'border border-slate-500 text-foreground hover:bg-slate-700/20',
   danger: 'bg-red-600 text-white hover:bg-red-500',
   success: 'bg-green-600 text-white hover:bg-green-500',
-  ghost: 'bg-transparent text-foreground hover:bg-slate-700/20'
+  ghost: 'bg-transparent text-foreground hover:bg-[var(--border-color)]'
 }
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -27,7 +27,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 }
 
 export default function Button({
-  variant = 'primary',
+  variant = 'ghost',
   size = 'md',
   loading = false,
   leftIcon,

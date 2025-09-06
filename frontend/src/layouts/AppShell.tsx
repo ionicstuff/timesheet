@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Button from '../ui/Button'
-import { Menu, Search, Plus, Sun, Moon, Clock as ClockIcon, Home, Folder, Building2, ListChecks } from 'lucide-react'
+import { Menu, Search, Plus, Sun, Moon, Clock as ClockIcon, Home, Folder, Building2, ListChecks, User, Settings, LogOut } from 'lucide-react'
 
 interface NavItem { label: string; to: string; icon: React.ReactNode }
 
@@ -17,7 +17,7 @@ const navItems: NavItem[] = [
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isDark, setIsDark] = useState(true)
+  const [isDark, setIsDark] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
@@ -31,7 +31,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [menuOpen])
 
   useEffect(() => {
-    document.body.removeAttribute('data-theme')
+    // Default to light theme
+    document.body.setAttribute('data-theme', 'light')
+    setIsDark(false)
   }, [])
 
   const toggleTheme = () => {
@@ -78,7 +80,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Button variant="outline" size="sm" className="w-9 h-9 p-0 hidden sm:inline-flex" title="Timer">
               <ClockIcon className="h-4 w-4" />
             </Button>
-            <Button size="sm" className="hidden sm:inline-flex"><Plus className="mr-2 h-4 w-4" /> New Task</Button>
+            <Button variant="primary" size="sm" className="hidden sm:inline-flex" leftIcon={<Plus className="h-4 w-4" />}>New Task</Button>
             <Button variant="outline" size="sm" onClick={toggleTheme} title={isDark ? 'Switch to light' : 'Switch to dark'}>
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
@@ -94,10 +96,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </button>
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-44 rounded-md border border-[var(--border-color)] bg-[var(--card-bg)] shadow-lg">
-                  <button className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--secondary-bg)]"><i className="fas fa-user mr-2" />Profile</button>
-                  <button className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--secondary-bg)]"><i className="fas fa-cog mr-2" />Settings</button>
+                  <button className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--secondary-bg)]"><User className="mr-2 inline-block h-4 w-4" />Profile</button>
+                  <button className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--secondary-bg)]"><Settings className="mr-2 inline-block h-4 w-4" />Settings</button>
                   <div className="h-px bg-[var(--border-color)] my-1" />
-                  <button className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-[var(--secondary-bg)]" onClick={doLogout}><i className="fas fa-sign-out-alt mr-2" />Logout</button>
+                  <button className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-[var(--secondary-bg)]" onClick={doLogout}><LogOut className="mr-2 inline-block h-4 w-4" />Logout</button>
                 </div>
               )}
             </div>

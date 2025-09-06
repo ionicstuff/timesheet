@@ -1,7 +1,7 @@
 import React from 'react'
 import Card from '../../ui/Card'
 import Button from '../../ui/Button'
-import { Calendar } from 'lucide-react'
+import { Calendar, Plus } from 'lucide-react'
 
 export default function TaskSchedulerWidget() {
   return (
@@ -11,7 +11,7 @@ export default function TaskSchedulerWidget() {
           <Calendar className="mx-auto mb-3 h-6 w-6" />
           <div className="mb-2 text-foreground">No events scheduled</div>
           <div>Your calendar is empty for the next 7 days</div>
-          <Button className="mt-3" size="sm"><i className="fas fa-plus mr-2"/>Schedule Event</Button>
+          <Button className="mt-3" size="sm" leftIcon={<Plus className="h-4 w-4" />}>Schedule Event</Button>
         </div>
       </div>
     </Card>
