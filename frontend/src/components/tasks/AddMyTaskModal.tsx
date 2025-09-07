@@ -8,9 +8,10 @@ interface AddMyTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreated: () => void;
+  defaultProjectId?: number;
 }
 
-const AddMyTaskModal: React.FC<AddMyTaskModalProps> = ({ isOpen, onClose, onCreated }) => {
+const AddMyTaskModal: React.FC<AddMyTaskModalProps> = ({ isOpen, onClose, onCreated, defaultProjectId }) => {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([] as any);
   const [projectId, setProjectId] = useState<number>(0);
@@ -31,6 +32,11 @@ const AddMyTaskModal: React.FC<AddMyTaskModalProps> = ({ isOpen, onClose, onCrea
       }
     })();
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (defaultProjectId) setProjectId(defaultProjectId);
+  }, [isOpen, defaultProjectId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

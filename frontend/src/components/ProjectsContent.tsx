@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ProjectService, { Project } from '../services/project.service';
-import ViewProjectModal from './projects/ViewProjectModal';
 import EditProjectModal from './projects/EditProjectModal';
+import Toast from './Toast';
 import AddProjectModal from './projects/AddProjectModal';
 
 // Styles aligned with Clients list for consistency
@@ -78,7 +79,6 @@ const ProjectsContent: React.FC = () => {
   const [rows, setRows] = useState(10);
 
 // Modals
-  const [viewProject, setViewProject] = useState<Project | null>(null);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [showAddProject, setShowAddProject] = useState(false);
 
@@ -161,8 +161,11 @@ const ProjectsContent: React.FC = () => {
     else { setSortBy(key); setSortDir('asc'); }
   };
 
+  const [toast, setToast] = useState<{ message: string; type: 'success'|'error'|'warning'|'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
+  const closeToast = () => setToast(p=>({ ...p, isVisible: false }));
   const handleProjectUpdated = (updated: Project) => {
     setProjects(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated } : p));
+    setToast({ message: 'Project updated', type: 'success', isVisible: true });
   };
 
   const handleCloseProject = async (p: Project) => {
@@ -195,6 +198,7 @@ const ProjectsContent: React.FC = () => {
     }
   };
 
+  const navigate = useNavigate();
   return (
     <div className="container-fluid px-4 py-4 page-wrap">
       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -256,7 +260,7 @@ const ProjectsContent: React.FC = () => {
                       </td>
                       <td>
                         <div className="actions">
-                          <button className="icon-btn" title="View" onClick={()=>setViewProject(p)}><i className="fas fa-eye"/></button>
+<button className="icon-btn" title="Open" onClick={()=>navigate(`/projects/${p.id}`)}><i className="fas fa-eye"/></button>
                           <button className="icon-btn" title="Edit" onClick={()=>setEditProject(p)}><i className="fas fa-edit"/></button>
                           <button className="icon-btn" title="Close Project" onClick={()=>handleCloseProject(p)} disabled={statusKey(p)==='completed'}>
                             <i className="fas fa-check-circle"/>
@@ -298,7 +302,7 @@ const ProjectsContent: React.FC = () => {
                   <span className="pill"><i className="fas fa-users"/> {members} Members</span>
                   <span className="pill"><i className="fas fa-tasks"/> {tasks} Tasks</span>
                   <div className="actions">
-                    <button className="icon-btn" title="View" onClick={()=>setViewProject(p)}><i className="fas fa-eye"/></button>
+<button className="icon-btn" title="Open" onClick={()=>navigate(`/projects/${p.id}`)}><i className="fas fa-eye"/></button>
                     <button className="icon-btn" title="Edit" onClick={()=>setEditProject(p)}><i className="fas fa-edit"/></button>
                     <button className="icon-btn" title="Close Project" onClick={()=>handleCloseProject(p)} disabled={statusKey(p)==='completed'}>
                       <i className="fas fa-check-circle"/>
@@ -312,8 +316,8 @@ const ProjectsContent: React.FC = () => {
         </div>
       )}
 
-      <ViewProjectModal project={viewProject} isOpen={!!viewProject} onClose={()=>setViewProject(null)} />
       <EditProjectModal project={editProject} isOpen={!!editProject} onClose={()=>setEditProject(null)} onProjectUpdated={handleProjectUpdated} />
+      <Toast message={toast.message} type={toast.type} isVisible={toast.isVisible} onClose={closeToast} />
 
       <AddProjectModal
         isOpen={showAddProject}

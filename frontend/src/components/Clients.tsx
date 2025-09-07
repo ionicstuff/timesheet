@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ClientService, { Client } from '../services/client.service';
 import EditClientModal from './EditClientModal';
 import AddClientModal from './AddClientModal';
-import ViewClientModal from './ViewClientModal';
 
 // ---- Light, self-contained styles (kept inline like your current file) ----
 const style = document.createElement('style');
@@ -119,7 +119,6 @@ const Clients: React.FC = () => {
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
-  const [viewClient, setViewClient] = useState<Client | null>(null);
 
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -235,6 +234,7 @@ const filtered = useMemo(() => {
     );
   };
 
+  const navigate = useNavigate();
   return (
     <div className="container-fluid px-4 py-4 page-wrap">
       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -336,7 +336,7 @@ const filtered = useMemo(() => {
                     </td>
                     <td>
                       <div className="actions">
-                        <button className="icon-btn" title="View" onClick={() => setViewClient(c)}><i className="fas fa-eye"/></button>
+<button className="icon-btn" title="Open" onClick={() => navigate(`/clients/${c.id}`)}><i className="fas fa-eye"/></button>
                         <button className="icon-btn" title="Edit" onClick={() => handleEditClient(c)}><i className="fas fa-edit"/></button>
                       </div>
                     </td>
@@ -373,7 +373,7 @@ const filtered = useMemo(() => {
               <div className="d-flex justify-content-between align-items-center mt-2">
                 <span className="projects-pill">{c.projects?.length ?? 0} Projects</span>
                 <div className="actions">
-                  <button className="icon-btn" title="View" onClick={() => setViewClient(c)}><i className="fas fa-eye"/></button>
+<button className="icon-btn" title="Open" onClick={() => navigate(`/clients/${c.id}`)}><i className="fas fa-eye"/></button>
                   <button className="icon-btn" title="Edit" onClick={() => handleEditClient(c)}><i className="fas fa-edit"/></button>
                 </div>
               </div>
