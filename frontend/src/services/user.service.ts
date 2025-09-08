@@ -161,14 +161,15 @@ class UserService {
 
     const resp = await api.get(`/users/team${query.toString() ? `?${query.toString()}` : ''}`);
     // Backend returns { success, data: { teamMembers, pagination } }
-    if (resp.data?.data?.teamMembers) {
-      return resp.data.data.teamMembers.map((u: any) => ({
+    const team = resp.data?.data?.teamMembers || resp.data?.teamMembers || resp.data?.data || [];
+    if (Array.isArray(team)) {
+      return team.map((u: any) => ({
         id: u.id,
         firstName: u.firstName || u.firstname || '',
         lastName: u.lastName || u.lastname || '',
         email: u.email,
         department: u.department,
-        designation: u.designation,
+        designation: u.designation || u.roleMaster?.roleName,
         profilePicture: u.profilePicture,
       }));
     }

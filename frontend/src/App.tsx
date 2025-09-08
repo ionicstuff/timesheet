@@ -11,6 +11,7 @@ import MyTasks from "./components/tasks/MyTasks";
 import AdminLogin from "./admin/components/AdminLogin";
 import AdminDashboard from "./admin/components/AdminDashboard";
 import BillingNew from "./pages/BillingNew";
+import BillingDetailNew from "./pages/BillingDetailNew";
 import "./App.css";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -22,6 +23,8 @@ import ClientsNew from "./pages/ClientsNew";
 import TasksNew from "./pages/TasksNew";
 import ProjectDetailNew from "./pages/ProjectDetailNew";
 import ClientDetailNew from "./pages/ClientDetailNew";
+import TeamsNew from "./pages/TeamsNew";
+import TeamMemberDetailNew from "./pages/TeamMemberDetailNew";
 import TaskDetailNew from "./pages/TaskDetailNew";
 import TimesheetNew from "./pages/TimesheetNew";
 
@@ -139,6 +142,22 @@ function App() {
               }
             />
             <Route
+              path="/teams"
+              element={
+                <ProtectedRoute>
+                  <TeamsNew />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teams/:id"
+              element={
+                <ProtectedRoute>
+                  <TeamMemberDetailNew />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/tasks/:id"
               element={
                 <ProtectedRoute>
@@ -162,6 +181,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <BillingNew />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/billing/:id"
+              element={
+                <ProtectedRoute>
+                  <BillingDetailNew />
                 </ProtectedRoute>
               }
             />

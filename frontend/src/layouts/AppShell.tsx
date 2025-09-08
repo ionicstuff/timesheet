@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Button from '../ui/Button'
-import { Menu, Search, Plus, Sun, Moon, Clock as ClockIcon, Home, Folder, Building2, ListChecks, User, Settings, LogOut, CreditCard } from 'lucide-react'
+import { Menu, Search, Plus, Sun, Moon, Clock as ClockIcon, Home, Folder, Building2, ListChecks, User, Users, Settings, LogOut, CreditCard } from 'lucide-react'
 
 interface NavItem { label: string; to: string; icon: React.ReactNode }
 
@@ -11,6 +11,7 @@ const navItems: NavItem[] = [
   { label: 'Projects', to: '/projects', icon: <Folder className="h-4 w-4" /> },
   { label: 'Clients', to: '/clients', icon: <Building2 className="h-4 w-4" /> },
   { label: 'My Tasks', to: '/tasks', icon: <ListChecks className="h-4 w-4" /> },
+  { label: 'Teams', to: '/teams', icon: <Users className="h-4 w-4" /> },
   { label: 'Timesheet', to: '/app/timesheet', icon: <ClockIcon className="h-4 w-4" /> },
   { label: 'Billing', to: '/billing', icon: <CreditCard className="h-4 w-4" /> },
 ]
