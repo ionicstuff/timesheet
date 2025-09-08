@@ -9,6 +9,7 @@ const Client = require('./Client');
 const Project = require('./Project');
 const Spoc = require('./Spoc');
 const Task = require('./Task');
+const Notification = require('./Notification');
 const Invoice = require('./Invoice');
 const InvoiceItem = require('./InvoiceItem');
 const InvoiceRevision = require('./InvoiceRevision');
@@ -206,6 +207,10 @@ User.hasMany(Task, {
   as: 'assignedTasks'
 });
 
+// Notification associations
+Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
+
 // Existing User and Timesheet associations
 User.hasMany(Timesheet, {
   foreignKey: 'userId',
@@ -233,4 +238,6 @@ module.exports = {
   Invoice,
   InvoiceItem,
   InvoiceRevision
+  ,
+  Notification
 };

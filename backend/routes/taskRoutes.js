@@ -14,6 +14,7 @@ router.post('/', taskController.createTask);
 router.get('/project/:projectId', taskController.getTasksByProject);
 router.put('/:id/accept', taskController.acceptTask);
 router.put('/:id/reject', taskController.rejectTask);
+router.put('/:id/assign', taskController.assignTask);
 
 // Timer action routes
 router.post('/:id/start', taskController.startTask);

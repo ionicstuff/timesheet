@@ -229,6 +229,77 @@ const getTaskTimeLogs = async (req, res) => {
   }
 };
 
+// Assign a task to a user (single)
+const assignTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { assignedTo, confirmOverwrite } = req.body;
+    const task = await Task.findByPk(id, { include: [{ model: Project, as: 'project' }] });
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    const targetUser = await User.findByPk(assignedTo);
+    if (!targetUser || !targetUser.is_active) return res.status(400).json({ message: 'Target user is not active or does not exist' });
+
+    // Permission checks: requester must manage targetUser via user_hierarchies or be project manager or account manager
+    const sequelize = require('../config/database');
+    // Check user_hierarchies - direct or recursive
+    const [rows] = await sequelize.query(`
+      WITH RECURSIVE team(user_id) AS (
+        SELECT user_id FROM user_hierarchies WHERE parent_user_id = $1 AND is_active
+        UNION
+        SELECT uh.user_id FROM user_hierarchies uh JOIN team t ON uh.parent_user_id = t.user_id WHERE uh.is_active
+      ) SELECT 1 FROM team WHERE user_id = $2 LIMIT 1
+    `, { bind: [req.user.id, assignedTo] });
+
+    let hasPermission = rows && rows.length > 0;
+
+    // Check if requester is project manager
+    if (!hasPermission && task.project && task.project.projectManagerId === req.user.id) hasPermission = true;
+
+    // Check if requester is account manager for the project client
+    if (!hasPermission && task.project && task.project.clientId) {
+      const [clients] = await sequelize.query('SELECT 1 FROM clients WHERE id = $1 AND account_manager_id = $2 LIMIT 1', { bind: [task.project.clientId, req.user.id] });
+      if (clients && clients.length > 0) hasPermission = true;
+    }
+
+    if (!hasPermission) return res.status(403).json({ message: 'You are not authorized to assign this task to that user' });
+
+    // Overwrite check
+    if (task.assignedTo && task.assignedTo !== assignedTo && !confirmOverwrite) {
+      return res.status(409).json({ message: 'Task already assigned. Set confirmOverwrite=true to force overwrite', currentAssignee: task.assignedTo });
+    }
+
+    await task.update({ assignedTo });
+
+    // Create notification record
+    const Notification = require('../models/Notification');
+    await Notification.create({ userId: assignedTo, title: 'Task assigned', body: `You have been assigned task: ${task.name}`, link: `/tasks/${task.id}` });
+
+    // Send email notification (emailService will fallback to console in dev)
+    const emailService = require('../services/emailService');
+    try {
+      const assignee = await User.findByPk(assignedTo);
+      await emailService.sendTaskStatusEmail(task, 'assigned', req.user);
+      // Also send direct email to assignee if they have email
+      if (assignee?.email) {
+        await emailService.transporter.sendMail({
+          from: `"TimeSheet Pro" <${process.env.EMAIL_FROM || 'noreply@timesheet.com'}>`,
+          to: assignee.email,
+          subject: `You have been assigned a task: ${task.name}`,
+          html: `<p>Hi ${assignee.firstName || ''},</p><p>You have been assigned the task <strong>${task.name}</strong> in project ${task.project?.projectName || task.projectId}.</p><p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/tasks/${task.id}">View Task</a></p>`
+        });
+      }
+    } catch (e) {
+      console.error('Failed to send assignment email', e);
+    }
+
+    res.json({ message: 'Task assigned successfully', task });
+  } catch (error) {
+    console.error('Error assigning task:', error);
+    res.status(500).json({ message: 'Error assigning task', error: error.message });
+  }
+};
+
 const TaskTimerService = require('../services/TaskTimerService');
 
 const startTask = async (req, res) => {
@@ -286,6 +357,7 @@ module.exports = {
   acceptTask,
   rejectTask,
   getMyTasks,
+  assignTask,
   startTask,
   pauseTask,
   resumeTask,

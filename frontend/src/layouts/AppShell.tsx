@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Button from '../ui/Button'
-import { Menu, Search, Plus, Sun, Moon, Clock as ClockIcon, Home, Folder, Building2, ListChecks, User, Users, Settings, LogOut, CreditCard } from 'lucide-react'
+import { Menu, Search, Plus, Sun, Moon, Clock as ClockIcon, Home, Folder, Building2, ListChecks, User, Users, Settings, LogOut, CreditCard, Calendar as CalendarIcon } from 'lucide-react'
 
 interface NavItem { label: string; to: string; icon: React.ReactNode }
 
@@ -13,6 +13,7 @@ const navItems: NavItem[] = [
   { label: 'My Tasks', to: '/tasks', icon: <ListChecks className="h-4 w-4" /> },
   { label: 'Teams', to: '/teams', icon: <Users className="h-4 w-4" /> },
   { label: 'Timesheet', to: '/app/timesheet', icon: <ClockIcon className="h-4 w-4" /> },
+  { label: 'Calendar', to: '/calendar', icon: <CalendarIcon className="h-4 w-4" /> },
   { label: 'Billing', to: '/billing', icon: <CreditCard className="h-4 w-4" /> },
 ]
 
@@ -82,7 +83,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Button variant="outline" size="sm" className="w-9 h-9 p-0 hidden sm:inline-flex" title="Timer">
               <ClockIcon className="h-4 w-4" />
             </Button>
-            <Button variant="primary" size="sm" className="hidden sm:inline-flex" leftIcon={<Plus className="h-4 w-4" />}>New Task</Button>
+            <Button variant="primary" size="sm" className="hidden sm:inline-flex" leftIcon={<Plus className="h-4 w-4" />} onClick={()=>{ try { window.dispatchEvent(new CustomEvent('app:new-task')); } catch { /* no-op */ } }}>New Task</Button>
             <Button variant="outline" size="sm" onClick={toggleTheme} title={isDark ? 'Switch to light' : 'Switch to dark'}>
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>

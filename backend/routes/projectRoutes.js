@@ -1,10 +1,14 @@
 const express = require('express');
 const projectController = require('../controllers/projectController');
 const authorizeRoles = require('../middleware/authorizeRoles');
+const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Protect all project routes
+// Route for any authenticated user to fetch their accessible projects
+router.get('/my', authMiddleware, projectController.getMyProjects);
+
+// Protect all remaining project routes
 router.use(authorizeRoles('Admin', 'Director', 'Account Manager', 'Project Manager'));
 
 // Project routes

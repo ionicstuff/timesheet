@@ -27,6 +27,7 @@ import TeamsNew from "./pages/TeamsNew";
 import TeamMemberDetailNew from "./pages/TeamMemberDetailNew";
 import TaskDetailNew from "./pages/TaskDetailNew";
 import TimesheetNew from "./pages/TimesheetNew";
+import Calendar from "./pages/Calendar";
 
 function App() {
   return (
@@ -82,6 +83,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <TimesheetNew />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <ProtectedRoute>
+                  <Calendar />
                 </ProtectedRoute>
               }
             />

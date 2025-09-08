@@ -139,6 +139,18 @@ export interface UpdateProjectData extends CreateProjectData {
 }
 
 class ProjectService {
+  // Get only the current user's accessible projects
+  async getMyProjects(): Promise<Pick<Project,'id'|'name'>[]> {
+    try {
+      const response = await api.get('/projects/my');
+      const arr = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      return arr.map((p: any) => ({ id: p.id, name: p.projectName || p.name || p.project_name }));
+    } catch (error) {
+      console.error('Error fetching my projects:', error);
+      throw error;
+    }
+  }
+
   // Get all projects
   async getProjects(): Promise<Project[]> {
     try {

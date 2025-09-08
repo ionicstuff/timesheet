@@ -160,6 +160,12 @@ class TaskService {
     return response.data;
   }
 
+  // Assign a task to a user
+  async assignTask(id: number, payload: { assignedTo: number; confirmOverwrite?: boolean }): Promise<{ message: string; task: Task }> {
+    const response = await api.put(`/tasks/${id}/assign`, payload);
+    return response.data;
+  }
+
   async getMyTasks(filters?: {
     status?: string;
     acceptanceStatus?: string;

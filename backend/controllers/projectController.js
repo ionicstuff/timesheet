@@ -810,6 +810,35 @@ const getProjectPerformance = async (req, res) => {
   }
 };
 
+// Get only the projects accessible to the current user (created by them or assigned via tasks)
+const getMyProjects = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?.userId; // supports both auth middlewares
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const [rows] = await sequelize.query(`
+      SELECT DISTINCT p.id, p.project_name
+      FROM projects p
+      WHERE p.created_by = $1
+         OR p.project_manager_id = $1
+         OR EXISTS (
+              SELECT 1 FROM tasks t
+              WHERE t.project_id = p.id AND t.assigned_to = $1
+            )
+      ORDER BY p.project_name ASC
+    `, { bind: [userId] });
+
+    const projects = rows.map(r => ({ id: r.id, projectName: r.project_name, name: r.project_name }));
+    return res.json(projects);
+  } catch (error) {
+    console.error('Error fetching my projects:', error);
+    return res.status(500).json({ message: 'Error fetching my projects', error: error.message });
+  }
+};
+
 module.exports = {
   getProjects,
   getProject,
@@ -822,5 +851,6 @@ module.exports = {
   getManagers,
   getUsers,
   closeProject,
-  getProjectPerformance
+  getProjectPerformance,
+  getMyProjects
 };
