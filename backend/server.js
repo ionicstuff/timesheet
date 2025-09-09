@@ -87,6 +87,7 @@ app.use('/api/projects', require('./routes/projectRoutes'));
 app.use('/api/client-management', require('./routes/clientRoutes'));
 app.use('/api/spocs', require('./routes/spocRoutes'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/admin', require('./admin/routes/admin'));
 app.use('/api/finance', require('./routes/financeRoutes'));
 

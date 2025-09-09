@@ -8,7 +8,6 @@ import Alert from '../ui/Alert'
 import taskService, { Task as UiTask } from '../services/task.service'
 import StatsCard from '../components/dashboard/StatsCard'
 import TaskList from '../components/tasks/TaskList'
-import CreateTaskButton from '../components/tasks/CreateTaskButton'
 import RecentActivity from '../components/dashboard/RecentActivity'
 import GoalTracker from '../components/dashboard/GoalTracker'
 import Achievements from '../components/dashboard/Achievements'
@@ -76,7 +75,7 @@ export default function DashboardNew() {
         {/* Heading */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <CreateTaskButton />
+          {/* Removed New Task button as requested */}
         </div>
 
         {/* Stats row similar to reference */}

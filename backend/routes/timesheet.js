@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { Timesheet } = require('../models');
+const { Timesheet, Task } = require('../models');
 const { authMiddleware } = require('../middleware/auth');
+const TaskTimerService = require('../services/TaskTimerService');
+const { Op } = require('sequelize');
 
 // Apply authentication middleware to all routes
 router.use(authMiddleware);
@@ -116,6 +118,19 @@ router.post('/clockout', async (req, res) => {
         message: 'Already clocked out today',
         data: formatTimesheetResponse(timesheet)
       });
+    }
+
+    // Auto-pause any running tasks for this user before clocking out
+    const runningTasks = await Task.findAll({
+      where: { assignedTo: req.user.id, activeTimerStartedAt: { [Op.ne]: null } }
+    });
+    for (const task of runningTasks) {
+      try {
+        await TaskTimerService.pause(task.id, req.user, 'Auto-pause due to clock out');
+      } catch (e) {
+        // Non-blocking: proceed even if a task fails to pause
+        console.error('Auto-pause failed for task', task.id, e?.message || e);
+      }
     }
 
     timesheet.clockOut = currentTime;

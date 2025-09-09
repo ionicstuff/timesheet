@@ -1,5 +1,6 @@
 const { Task, Project, User } = require('../models');
 const sequelize = require('../config/database');
+const notificationSvc = require('../services/notificationService');
 
 // Get all tasks
 const getTasks = async (req, res) => {
@@ -85,10 +86,9 @@ const createTask = async (req, res) => {
       estimatedTime
     });
 
-    // Send notification to assigned user if they exist
+    // Notify assignee (if any)
     if (assignedTo) {
-      // Example notification - Replace it with your notification system implementation
-      console.log(`Notification sent to user ${assignedTo}: You have been assigned a new task: ${name}.`);
+      try { await notificationSvc.notifyTaskAssigned(task, req.user?.id || null); } catch (e) { console.error('notifyTaskAssigned failed', e); }
     }
 
     res.status(201).json({ message: 'Task created successfully', task });
@@ -107,7 +107,20 @@ const updateTask = async (req, res) => {
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
+    const prevAssignee = task.assignedTo;
+    const prevStatus = task.status;
     await task.update({ name, description, assignedTo, estimatedTime, status });
+
+    // Notifications: reassignment and status change
+    try {
+      if (typeof assignedTo !== 'undefined' && assignedTo !== prevAssignee) {
+        await notificationSvc.notifyTaskReassigned(task, prevAssignee, req.user?.id || null);
+      }
+      if (typeof status !== 'undefined' && status !== prevStatus) {
+        await notificationSvc.notifyTaskStatusChanged(task, prevStatus, req.user?.id || null);
+      }
+    } catch (e) { console.error('updateTask notifications failed', e); }
+
     res.json({ message: 'Task updated successfully', task });
   } catch (error) {
     console.error('Error updating task:', error);
@@ -269,11 +282,11 @@ const assignTask = async (req, res) => {
       return res.status(409).json({ message: 'Task already assigned. Set confirmOverwrite=true to force overwrite', currentAssignee: task.assignedTo });
     }
 
+    const prevAssignee = task.assignedTo;
     await task.update({ assignedTo });
 
-    // Create notification record
-    const Notification = require('../models/Notification');
-    await Notification.create({ userId: assignedTo, title: 'Task assigned', body: `You have been assigned task: ${task.name}`, link: `/tasks/${task.id}` });
+    // Notifications for reassignment/assignment
+    try { await notificationSvc.notifyTaskReassigned(task, prevAssignee, req.user?.id || null); } catch (e) { console.error('notifyTaskReassigned failed', e); }
 
     // Send email notification (emailService will fallback to console in dev)
     const emailService = require('../services/emailService');
@@ -341,7 +354,7 @@ const stopTask = async (req, res) => {
 const completeTask = async (req, res) => {
   try {
     const task = await TaskTimerService.complete(req.params.id, req.user, req.body?.note || null);
-    res.json({ message: 'Task completed', task });
+    res.json({ message: 'Task completed and timesheet prefilled', task });
   } catch (e) {
     res.status(400).json({ message: e.message });
   }

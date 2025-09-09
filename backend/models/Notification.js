@@ -29,6 +29,19 @@ const Notification = sequelize.define('Notification', {
     allowNull: false,
     defaultValue: false,
     field: 'is_read'
+  },
+  type: {
+    type: DataTypes.STRING(64),
+    allowNull: true
+  },
+  actorUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'actor_user_id'
+  },
+  metadata: {
+    type: DataTypes.JSONB,
+    allowNull: true
   }
 }, {
   tableName: 'notifications',

@@ -1,12 +1,25 @@
 const sequelize = require('../config/database');
-const { Task } = require('../models');
+const { Task, Timesheet } = require('../models');
 const TaskTimeLog = require('../models/TaskTimeLog');
 const emailService = require('./emailService');
+const TimesheetAutoFillService = require('./TimesheetAutoFillService');
 
 function roundSecondsToNearestMinute(sec) {
   // Round to nearest 60 seconds
   const minutes = Math.round(sec / 60);
   return minutes * 60;
+}
+
+function getTodayDate() {
+  return new Date().toISOString().split('T')[0];
+}
+
+async function ensureClockedIn(user, t) {
+  const todayDate = getTodayDate();
+  const ts = await Timesheet.findOne({ where: { userId: user.id, date: todayDate }, transaction: t });
+  if (!ts || !ts.clockIn || ts.clockOut) {
+    throw new Error('You must clock in to start or resume tasks.');
+  }
 }
 
 class TaskTimerService {
@@ -19,6 +32,9 @@ class TaskTimerService {
       if (task.assignedTo && task.assignedTo !== user.id && !['Project Manager','Account Manager','Admin','Director','Team Lead'].includes(user.role)) {
         throw new Error('Not authorized to start this task');
       }
+
+      // Require user to be clocked in
+      await ensureClockedIn(user, t);
 
       // Prevent concurrent timers for user across tasks
       if (user.id) {
@@ -85,6 +101,9 @@ class TaskTimerService {
         throw new Error('Task must be paused to resume');
       }
 
+      // Require user to be clocked in
+      await ensureClockedIn(user, t);
+
       // Prevent concurrent timers
       if (user.id) {
         const running = await Task.findOne({
@@ -137,14 +156,17 @@ class TaskTimerService {
       await task.save({ transaction: t });
 
       await TaskTimeLog.create({
-        taskId: task.id,
-        userId: user.id,
-        action: 'complete',
-        startAt: null,
-        endAt: task.completedAt,
-        durationSeconds: 0,
-        note
-      }, { transaction: t });
+          taskId: task.id,
+          userId: user.id,
+          action: 'complete',
+          startAt: null,
+          endAt: task.completedAt,
+          durationSeconds: 0,
+          note
+        }, { transaction: t });
+
+      // Prefill today's timesheet entry for this task/user
+      await TimesheetAutoFillService.upsertFromTaskCompletion(task, user, t);
 
       void emailService.sendTaskStatusEmail?.(task, 'completed', user).catch(() => {});
       return task;

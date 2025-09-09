@@ -3,6 +3,8 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Button from '../ui/Button'
 import { Menu, Search, Plus, Sun, Moon, Clock as ClockIcon, Home, Folder, Building2, ListChecks, User, Users, Settings, LogOut, CreditCard, Calendar as CalendarIcon } from 'lucide-react'
+import RunningTaskTicker from '../components/tasks/RunningTaskTicker'
+import NotificationBell from '../components/notifications/NotificationBell'
 
 interface NavItem { label: string; to: string; icon: React.ReactNode }
 
@@ -87,6 +89,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Button variant="outline" size="sm" onClick={toggleTheme} title={isDark ? 'Switch to light' : 'Switch to dark'}>
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
+            <NotificationBell />
             <div className="relative" ref={menuRef}>
               <button className="ml-1 flex items-center gap-2" onClick={() => setMenuOpen(!menuOpen)}>
                 <span className="hidden sm:block text-sm text-muted-foreground text-right">
@@ -117,7 +120,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           'fixed md:static z-30 inset-y-0 left-0 w-64 transform md:transform-none transition-transform',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         ].join(' ')}>
-          <div className="h-full bg-[var(--sidebar-bg)] border-r border-[var(--border-color)] p-3">
+          <div className="h-full bg-[var(--sidebar-bg)] border-r border-[var(--border-color)] p-3 relative pb-16">
             <nav className="space-y-1">
               {navItems.map(item => (
                 <NavLink key={item.to} to={item.to} className={({ isActive }) => [
@@ -129,6 +132,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </NavLink>
               ))}
             </nav>
+            <RunningTaskTicker />
           </div>
         </aside>
 
