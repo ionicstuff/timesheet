@@ -20,7 +20,7 @@
   /* Brand / Status */
   --accent-blue: #5b8cff;    /* primary */
   --accent-blue-600: #4a76e8;
-  --success-color: #3ccb7f;
+  --success-color: #16A34A;
   --danger-color: #ff5c5c;
   --info-color: #46b1e7;
   --secondary-color: #6c757d;
@@ -94,7 +94,7 @@ body {
 }
 
 /* Headings */
-h1, .h1 { font-family: var(--font-family-primary); font-size: var(--font-size-h1); font-weight: 600; line-height: var(--line-height-h1); color: var(--text-primary); }
+h1, .h1 { font-family: var(--font-family-primary); font-size: var(--font-size-h1); font-weight: 700; line-height: var(--line-height-h1); color: var(--text-primary); }
 h2, .h2 { font-family: var(--font-family-primary); font-size: var(--font-size-h2); font-weight: 600; line-height: var(--line-height-h2); color: var(--text-primary); }
 h3, .h3 { font-family: var(--font-family-primary); font-size: var(--font-size-h3); font-weight: 600; line-height: var(--line-height-h3); color: var(--text-primary); }
 
@@ -272,11 +272,29 @@ select option:checked {
 
 /* === Tailwind-friendly design tokens (aliases) === */
 :root {
-  /* Map generic tokens used in the spec to existing variables */
+  /* Map generic tokens used in the spec to existing variables (DARK default) */
   --background: var(--primary-bg);
   --foreground: var(--text-primary);
   --muted-foreground: var(--text-secondary);
   --primary: var(--accent-blue);
+  --primary-foreground: #ffffff;
+
+  --card: var(--card-bg);
+  --card-foreground: var(--text-primary);
+  --popover: var(--card-bg);
+  --popover-foreground: var(--text-primary);
+
+  --secondary: var(--secondary-bg);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--secondary-bg);
+  --accent: var(--secondary-bg);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--danger-color);
+  --destructive-foreground: #ffffff;
+
+  --border: var(--border-color);
+  --input: var(--border-color);
+  --ring: var(--accent-blue);
 }
 
 [data-theme="light"] {
@@ -284,6 +302,34 @@ select option:checked {
   --foreground: var(--text-primary);
   --muted-foreground: var(--text-secondary);
   --primary: var(--accent-blue);
+  --primary-foreground: #ffffff;
+
+  --card: var(--card-bg);
+  --card-foreground: var(--text-primary);
+  --popover: #ffffff;
+  --popover-foreground: var(--text-primary);
+
+  --secondary: var(--secondary-bg);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--secondary-bg);
+  --accent: var(--secondary-bg);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--danger-color);
+  --destructive-foreground: #ffffff;
+
+  --border: var(--border-color);
+  --input: var(--border-color);
+  --ring: var(--accent-blue);
+
+  /* Sidebar tokens (for compatibility with taskflow-io) */
+  --sidebar-background: var(--sidebar-bg);
+  --sidebar-foreground: var(--text-secondary);
+  --sidebar-primary: var(--accent-blue);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--secondary-bg);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--border-color);
+  --sidebar-ring: var(--accent-blue);
 }
 
 @layer utilities {
@@ -291,9 +337,30 @@ select option:checked {
   .text-foreground { color: var(--foreground) !important; }
   .text-muted-foreground { color: var(--muted-foreground) !important; }
   .text-primary { color: var(--primary) !important; }
+  .text-card-foreground { color: var(--card-foreground) !important; }
+  .text-popover-foreground { color: var(--popover-foreground) !important; }
 
   /* Background utilities */
   .bg-background { background-color: var(--background) !important; }
   .bg-primary { background-color: var(--primary) !important; }
+  .bg-card { background-color: var(--card) !important; }
+  .bg-popover { background-color: var(--popover) !important; }
+  .bg-secondary { background-color: var(--secondary) !important; }
+  .bg-muted { background-color: var(--muted) !important; }
+  .bg-accent { background-color: var(--accent) !important; }
+
+  /* Border utilities */
+  .border-border { border-color: var(--border) !important; }
+  .border-input { border-color: var(--input) !important; }
+}
+
+/* ===== Page-specific overrides ===== */
+/* Dashboard title exact spec */
+[data-page="dashboard"] .dash-title {
+  font-family: var(--font-family-primary);
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 

@@ -1,8 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './env-shim';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import '@fortawesome/fontawesome-free/css/all.min.css';
+// Removed Bootstrap and FontAwesome to match taskflow-io styling
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
