@@ -38,16 +38,18 @@ export default function StatsCard({ title, value, description, icon, trend, tren
   ) : null
 
   return (
-    <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm p-2">
+    <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm p-4 h-full flex flex-col justify-between">
       <div className="flex flex-row items-center justify-between mb-2">
         <h3 className="text-xs font-medium">{title}</h3>
         {icon}
       </div>
-      <div className="text-xl font-bold mb-1">{value}</div>
-      <p className="text-xs text-muted-foreground">
-        {description}
-        {badge && <span className="ml-1">{badge}</span>}
-      </p>
+      <div>
+        <div className="text-2xl font-bold mb-1">{value}</div>
+        <p className="text-xs text-muted-foreground">
+          {description}
+          {badge && <span className="ml-1">{badge}</span>}
+        </p>
+      </div>
     </div>
   )
 }

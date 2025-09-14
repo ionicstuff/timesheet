@@ -14,9 +14,9 @@ import { Calendar as CalendarIcon, Clock, CheckCircle, AlertCircle, TrendingUp }
 
 export default function DashboardNew() {
   const tasks = [
-    { id: 1, title: 'Design homepage', project: 'Website Redesign', dueDate: 'Today', priority: 'High' as const, completed: false },
-    { id: 2, title: 'Meeting with client', project: 'Product Launch', dueDate: 'Tomorrow', priority: 'Medium' as const, completed: false },
-    { id: 3, title: 'Update documentation', project: 'Marketing Campaign', dueDate: 'In 2 days', priority: 'Low' as const, completed: true },
+    { id: 1, name: 'Design homepage', projectName: 'Website Redesign', dueDate: 'Today', priority: 'High' as const, completed: false },
+    { id: 2, name: 'Meeting with client', projectName: 'Product Launch', dueDate: 'Tomorrow', priority: 'Medium' as const, completed: false },
+    { id: 3, name: 'Update documentation', projectName: 'Marketing Campaign', dueDate: 'In 2 days', priority: 'Low' as const, completed: true },
   ]
 
   return (
@@ -27,48 +27,55 @@ export default function DashboardNew() {
           <CreateTaskButton />
         </div>
 
-        <div className="grid gap-2 grid-cols-4">
-        <StatsCard
-          title="Total Tasks"
-          value="24"
-          description="+2 from last week"
-          icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
-          trend="up"
-          trendValue="+12%"
-        />
-        <StatsCard
-          title="Pending Tasks"
-          value="8"
-          description="3 due today"
-          icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-        />
-        <StatsCard
-          title="Overdue Tasks"
-          value="2"
-          description="Requires attention"
-          icon={<AlertCircle className="h-4 w-4 text-muted-foreground" />}
-        />
-        <StatsCard
-          title="Productivity"
-          value="78%"
-          description="+12% from last week"
-          icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
-          trend="up"
-          trendValue="+12%"
-        />
-      </div>
+        <div className="flex flex-col md:flex-row gap-4 items-stretch">
+          <div className="flex-1">
+            <StatsCard
+              title="Total Tasks"
+              value="24"
+              description="+2 from last week"
+              icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
+              trend="up"
+              trendValue="+12%"
+            />
+          </div>
+          <div className="flex-1">
+            <StatsCard
+              title="Pending Tasks"
+              value="8"
+              description="3 due today"
+              icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+            />
+          </div>
+          <div className="flex-1">
+            <StatsCard
+              title="Overdue Tasks"
+              value="2"
+              description="Requires attention"
+              icon={<AlertCircle className="h-4 w-4 text-muted-foreground" />}
+            />
+          </div>
+          <div className="flex-1">
+            <StatsCard
+              title="Productivity"
+              value="78%"
+              description="+12% from last week"
+              icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
+              trend="up"
+              trendValue="+12%"
+            />
+          </div>
+        </div>
 
         <QuickActions />
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Upcoming Tasks</CardTitle>
               <CardDescription>Your tasks due soon</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Map sample tasks to your TaskList prop shape */}
-              <TaskList tasks={tasks.map(t => ({ id: t.id, name: t.title, projectName: t.project }))} />
+              <TaskList tasks={tasks} />
             </CardContent>
           </Card>
 
