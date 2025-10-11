@@ -345,7 +345,8 @@ const getProject = async (req, res) => {
 // Create a new project
 const createProject = async (req, res) => {
   try {
-    const { name, description, clientId, spocId, managerId, startDate, endDate, briefReceivedOn, estimatedTime, isActive } = req.body;
+    const { name, description, clientId, spocId, managerId, startDate, endDate, briefReceivedOn, estimatedTime, isActive,
+      recurrenceActive, recurrenceFrequency, recurrenceInterval, recurrenceUntil, recurrenceCount } = req.body;
     
     // Validate required fields
     if (!name || !clientId || !spocId) {
@@ -392,7 +393,32 @@ const createProject = async (req, res) => {
       ]
     });
 
-    res.status(201).json({ message: 'Project created successfully', project: result[0] });
+    const created = result[0];
+
+    // If recurrence fields provided, update the created project
+    if (recurrenceActive !== undefined || recurrenceFrequency || recurrenceInterval !== undefined || recurrenceUntil || recurrenceCount !== undefined) {
+      await sequelize.query(`
+        UPDATE projects
+        SET recurrence_active = COALESCE($1, recurrence_active),
+            recurrence_frequency = COALESCE($2, recurrence_frequency),
+            recurrence_interval = COALESCE($3, recurrence_interval),
+            recurrence_until = COALESCE($4, recurrence_until),
+            recurrence_count = COALESCE($5, recurrence_count),
+            updated_at = NOW()
+        WHERE id = $6
+      `, {
+        bind: [
+          recurrenceActive !== undefined ? !!recurrenceActive : null,
+          recurrenceFrequency || null,
+          recurrenceInterval != null ? Number(recurrenceInterval) : null,
+          recurrenceUntil || null,
+          recurrenceCount != null ? Number(recurrenceCount) : null,
+          created.id
+        ]
+      });
+    }
+
+    res.status(201).json({ message: 'Project created successfully', project: created });
   } catch (error) {
     console.error('Error creating project:', error);
     res.status(500).json({ message: 'Error creating project', error: error.message });
@@ -439,6 +465,277 @@ const deleteProject = async (req, res) => {
   } catch (error) {
     console.error('Error deleting project:', error);
     res.status(500).json({ message: 'Error deleting project', error: error.message });
+  }
+};
+
+// Archive a project (set is_active = false)
+const archiveProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const project = await Project.findByPk(id);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    project.isActive = false;
+    await project.save();
+
+    return res.json({ message: 'Project archived successfully', project: { id: project.id, isActive: project.isActive } });
+  } catch (error) {
+    console.error('Error archiving project:', error);
+    return res.status(500).json({ message: 'Error archiving project', error: error.message });
+  }
+};
+
+// Duplicate a project (basic fields + tasks)
+const duplicateProject = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const original = await Project.findByPk(id, { transaction: t });
+    if (!original) {
+      await t.rollback();
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const baseCode = (original.projectCode || original.projectName || 'PROJECT')
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .slice(0, 16);
+    const suffix = Date.now().toString().slice(-6);
+    const newCode = `${baseCode}_${suffix}`;
+    const newName = `${original.projectName} (Copy)`;
+
+    const newProject = await Project.create({
+      projectCode: newCode,
+      projectName: newName,
+      description: original.description,
+      clientId: original.clientId,
+      projectManagerId: original.projectManagerId,
+      startDate: original.startDate,
+      endDate: original.endDate,
+      estimatedHours: original.estimatedHours,
+      budgetAmount: original.budgetAmount,
+      currency: original.currency,
+      priority: original.priority,
+      billingType: original.billingType,
+      hourlyRate: original.hourlyRate,
+      isTimeTrackingEnabled: original.isTimeTrackingEnabled,
+      isBillable: original.isBillable,
+      tags: original.tags,
+      notes: null,
+      isActive: true,
+      status: 'planning',
+      spocId: original.spocId,
+      briefReceivedOn: original.briefReceivedOn,
+      estimatedTime: original.estimatedTime,
+      createdBy: req.user?.id || original.createdBy
+    }, { transaction: t });
+
+    const tasks = await Task.findAll({ where: { projectId: id }, transaction: t });
+    for (const task of tasks) {
+      await Task.create({
+        projectId: newProject.id,
+        name: task.name,
+        description: task.description,
+        assignedTo: task.assignedTo,
+        estimatedTime: task.estimatedTime,
+        status: 'pending',
+        acceptanceStatus: 'pending',
+        acceptedAt: null,
+        rejectionReason: null,
+        startedAt: null,
+        completedAt: null,
+        totalTrackedSeconds: 0,
+        activeTimerStartedAt: null,
+        lastPausedAt: null,
+      }, { transaction: t });
+    }
+
+    await t.commit();
+    return res.status(201).json({ message: 'Project duplicated successfully', project: { id: newProject.id } });
+  } catch (error) {
+    await t.rollback();
+    console.error('Error duplicating project:', error);
+    return res.status(500).json({ message: 'Error duplicating project', error: error.message });
+  }
+};
+
+// Helpers for recurrence date math
+function toDateOnlyString(d) {
+  if (!d) return null;
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+function parseDateOnly(s) {
+  if (!s) return null;
+  return new Date(`${s}T00:00:00Z`);
+}
+function addByFrequency(date, frequency, interval) {
+  const d = new Date(date.getTime());
+  const step = Math.max(Number(interval || 1), 1);
+  if (frequency === 'daily') {
+    d.setUTCDate(d.getUTCDate() + step);
+  } else if (frequency === 'weekly') {
+    d.setUTCDate(d.getUTCDate() + 7 * step);
+  } else if (frequency === 'monthly') {
+    const month = d.getUTCMonth();
+    d.setUTCMonth(month + step);
+  } else {
+    d.setUTCDate(d.getUTCDate() + step);
+  }
+  return d;
+}
+
+// Set recurrence settings
+const setRecurrence = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { active, frequency, interval, until, count } = req.body || {};
+
+    const allowedFreq = ['daily', 'weekly', 'monthly'];
+    if (frequency && !allowedFreq.includes(frequency)) {
+      return res.status(400).json({ message: 'Invalid frequency' });
+    }
+
+    const [result] = await sequelize.query(`
+      UPDATE projects
+      SET recurrence_active = COALESCE($1, recurrence_active),
+          recurrence_frequency = COALESCE($2, recurrence_frequency),
+          recurrence_interval = COALESCE($3, recurrence_interval),
+          recurrence_until = COALESCE($4, recurrence_until),
+          recurrence_count = COALESCE($5, recurrence_count),
+          updated_at = NOW()
+      WHERE id = $6
+      RETURNING id
+    `, {
+      bind: [
+        active !== undefined ? !!active : null,
+        frequency || null,
+        interval != null ? Number(interval) : null,
+        until || null,
+        count != null ? Number(count) : null,
+        id
+      ]
+    });
+
+    if (!result || result.length === 0) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    return res.json({ message: 'Recurrence updated' });
+  } catch (error) {
+    console.error('Error updating recurrence:', error);
+    return res.status(500).json({ message: 'Error updating recurrence', error: error.message });
+  }
+};
+
+// Generate next occurrence by duplicating the project and shifting dates
+const generateNextOccurrence = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const original = await Project.findByPk(id, { transaction: t });
+    if (!original) {
+      await t.rollback();
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    if (!original.recurrenceActive || !original.recurrenceFrequency) {
+      await t.rollback();
+      return res.status(400).json({ message: 'Recurrence is not configured for this project' });
+    }
+
+    const start = original.startDate ? parseDateOnly(original.startDate) : null;
+    const end = original.endDate ? parseDateOnly(original.endDate) : null;
+    const freq = original.recurrenceFrequency;
+    const interval = original.recurrenceInterval || 1;
+
+    const nextStart = start ? addByFrequency(start, freq, interval) : null;
+    let nextEnd = null;
+    if (start && end) {
+      const durationMs = end.getTime() - start.getTime();
+      nextEnd = nextStart ? new Date(nextStart.getTime() + durationMs) : null;
+    } else if (!start && end) {
+      nextEnd = addByFrequency(end, freq, interval);
+    }
+
+    if (original.recurrenceUntil) {
+      const untilD = parseDateOnly(original.recurrenceUntil);
+      if (nextStart && untilD && nextStart > untilD) {
+        await t.rollback();
+        return res.status(400).json({ message: 'Next occurrence is beyond recurrence end date' });
+      }
+    }
+
+    const baseCode = (original.projectCode || original.projectName || 'PROJECT')
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .slice(0, 16);
+    const suffix = Date.now().toString().slice(-6);
+    const newCode = `${baseCode}_${suffix}`;
+    const nameSuffix = nextStart ? ` (${toDateOnlyString(nextStart)})` : ' (Next)';
+    const newName = `${original.projectName}${nameSuffix}`;
+
+    const newProject = await Project.create({
+      projectCode: newCode,
+      projectName: newName,
+      description: original.description,
+      clientId: original.clientId,
+      projectManagerId: original.projectManagerId,
+      startDate: nextStart ? toDateOnlyString(nextStart) : original.startDate,
+      endDate: nextEnd ? toDateOnlyString(nextEnd) : original.endDate,
+      estimatedHours: original.estimatedHours,
+      budgetAmount: original.budgetAmount,
+      currency: original.currency,
+      priority: original.priority,
+      billingType: original.billingType,
+      hourlyRate: original.hourlyRate,
+      isTimeTrackingEnabled: original.isTimeTrackingEnabled,
+      isBillable: original.isBillable,
+      tags: original.tags,
+      notes: null,
+      isActive: true,
+      status: 'planning',
+      spocId: original.spocId,
+      briefReceivedOn: original.briefReceivedOn,
+      estimatedTime: original.estimatedTime,
+      createdBy: req.user?.id || original.createdBy,
+      recurrenceActive: original.recurrenceActive,
+      recurrenceFrequency: original.recurrenceFrequency,
+      recurrenceInterval: original.recurrenceInterval,
+      recurrenceUntil: original.recurrenceUntil,
+      recurrenceCount: original.recurrenceCount,
+    }, { transaction: t });
+
+    const tasks = await Task.findAll({ where: { projectId: id }, transaction: t });
+    for (const task of tasks) {
+      await Task.create({
+        projectId: newProject.id,
+        name: task.name,
+        description: task.description,
+        assignedTo: task.assignedTo,
+        estimatedTime: task.estimatedTime,
+        status: 'pending',
+        acceptanceStatus: 'pending',
+        acceptedAt: null,
+        rejectionReason: null,
+        startedAt: null,
+        completedAt: null,
+        totalTrackedSeconds: 0,
+        activeTimerStartedAt: null,
+        lastPausedAt: null,
+      }, { transaction: t });
+    }
+
+    await t.commit();
+    return res.status(201).json({ message: 'Next occurrence generated', project: { id: newProject.id } });
+  } catch (error) {
+    await t.rollback();
+    console.error('Error generating next occurrence:', error);
+    return res.status(500).json({ message: 'Error generating next occurrence', error: error.message });
   }
 };
 
@@ -851,6 +1148,10 @@ module.exports = {
   getManagers,
   getUsers,
   closeProject,
+  archiveProject,
+  duplicateProject,
+  setRecurrence,
+  generateNextOccurrence,
   getProjectPerformance,
   getMyProjects
 };

@@ -20,6 +20,10 @@ router.get('/:id', projectController.getProject);
 router.get('/:id/performance', projectController.getProjectPerformance);
 router.put('/:id', projectController.updateProject);
 router.put('/:id/details', projectController.updateProjectDetails);
+router.post('/:id/archive', projectController.archiveProject);
+router.put('/:id/details', projectController.updateProjectDetails);
+router.put('/:id/recurrence', projectController.setRecurrence);
+router.post('/:id/generate-next', projectController.generateNextOccurrence);
 router.post('/:id/upload', projectController.uploadProjectFiles);
 router.get('/:id/files', projectController.getProjectFiles);
 // Only allow Account Manager or Project Manager to close a project

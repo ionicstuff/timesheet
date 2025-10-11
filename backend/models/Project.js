@@ -169,6 +169,36 @@ const Project = sequelize.define('Project', {
       key: 'id'
     }
   },
+  // Recurrence fields
+  recurrenceActive: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    field: 'recurrence_active'
+  },
+  recurrenceFrequency: {
+    type: DataTypes.ENUM('daily', 'weekly', 'monthly'),
+    allowNull: true,
+    field: 'recurrence_frequency'
+  },
+  recurrenceInterval: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 1,
+    validate: { min: 1 },
+    field: 'recurrence_interval'
+  },
+  recurrenceUntil: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    field: 'recurrence_until'
+  },
+  recurrenceCount: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    validate: { min: 1 },
+    field: 'recurrence_count'
+  },
   // Closing metadata
   closedAt: {
     type: DataTypes.DATE,
@@ -222,6 +252,9 @@ const Project = sequelize.define('Project', {
     },
     {
       fields: ['closed_at']
+    },
+    {
+      fields: ['recurrence_active']
     }
   ]
 });
